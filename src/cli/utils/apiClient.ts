@@ -19,6 +19,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly error_code?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -35,12 +36,18 @@ async function doFetch<T>(url: string, options?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let body = "";
+    let error_code: string | undefined;
     try {
       body = await response.text();
+      // Attempt to parse as JSON to extract machine-readable error_code (error-contract.schema.json)
+      const parsed = JSON.parse(body) as Record<string, unknown>;
+      if (typeof parsed["error_code"] === "string") {
+        error_code = parsed["error_code"];
+      }
     } catch {
-      // ignore
+      // ignore parse failure — body is kept as raw text
     }
-    throw new ApiError(response.status, `HTTP ${response.status}: ${body}`);
+    throw new ApiError(response.status, `HTTP ${response.status}: ${body}`, error_code);
   }
 
   return response.json() as Promise<T>;
