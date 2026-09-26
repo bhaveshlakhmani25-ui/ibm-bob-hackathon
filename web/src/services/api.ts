@@ -4,6 +4,7 @@ import type {
   RehearsalStatusResponse,
   RehearsalPhase,
   RehearsalReport,
+  JourneyReplayDetail,
 } from "../../../src/shared/contracts";
 
 // ---------------------------------------------------------------------------
@@ -425,6 +426,231 @@ export const getRehearsalReport = async (
   return report;
 };
 
+/**
+ * GET /api/rehearsals/:run_id/journey-replay/:journey_id
+ *
+ * MOCK: Returns a deterministic JourneyReplayDetail for the ShopFlow journey.
+ * The mock contains 5 steps with a realistic inventory-freshness divergence at
+ * step 3 ("Read Inventory"). This is the only step where `changed: true`.
+ *
+ * Replace the body of this function with a real fetch() call when Reuben's
+ * replay endpoint is available.
+ *
+ * Mock data is isolated here and not exported beyond the service layer.
+ */
+export const getJourneyReplay = async (
+  runId: string,
+  journeyId: string,
+): Promise<JourneyReplayDetail> => {
+  await delay(500); // MOCK: simulate network round-trip
+
+  if (runId !== mockRunId || !mockRun) {
+    throw new Error(`Rehearsal not found: ${runId}`);
+  }
+
+  if (mockRun.status.status !== "completed") {
+    throw new Error(`Report not ready. Status: ${mockRun.status.status}`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // MOCK REPLAY — deterministic ShopFlow journey, isolated to this function.
+  // Replace with real engine data when Reuben's replay endpoint is wired in.
+  //
+  // Divergence: Step 3 (Read Inventory) — candidate returns stale stock=10
+  // instead of the updated value stock=1 that the baseline correctly reflects.
+  // The `changed: true` flag is set ONLY on step 3 by the engine.
+  // ---------------------------------------------------------------------------
+  const replay: JourneyReplayDetail = {
+    run_id: runId,
+    journey: {
+      id: journeyId,
+      name: "ShopFlow — Product Purchase Journey",
+      description:
+        "Full user purchase journey: search → open product → check inventory → add to cart → checkout.",
+      type: "user",
+      source: "requirement",
+      confidence: "test_derived",
+      steps: [
+        {
+          id: "step-1",
+          sequence: 1,
+          action_type: "http",
+          description: "Product Search",
+          input: { query: "widget" },
+          expected_hint: "Returns a list of matching products",
+        },
+        {
+          id: "step-2",
+          sequence: 2,
+          action_type: "http",
+          description: "Open Product",
+          input: { product_id: "product-99" },
+          expected_hint: "Returns product detail including current price",
+        },
+        {
+          id: "step-3",
+          sequence: 3,
+          action_type: "http",
+          description: "Read Inventory",
+          input: { product_id: "product-99" },
+          expected_hint:
+            "Returns the live stock count — must reflect the latest inventory write",
+        },
+        {
+          id: "step-4",
+          sequence: 4,
+          action_type: "http",
+          description: "Add Item to Cart",
+          input: { product_id: "product-99", quantity: 1 },
+          expected_hint: "Cart reflects newly added item",
+        },
+        {
+          id: "step-5",
+          sequence: 5,
+          action_type: "http",
+          description: "Checkout",
+          input: { cart_id: "cart-42" },
+          expected_hint: "Order confirmed with correct total",
+        },
+      ],
+    },
+    overall_verdict: "regression",
+    confidence_source: "contract_derived",
+    confidence_score: 1.0,
+    steps: [
+      // Step 1 — Product Search: unchanged
+      {
+        step_id: "step-1",
+        sequence: 1,
+        name: "Product Search",
+        action: "GET /products?q=widget",
+        expected_hint: "Returns a list of matching products",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({ status: 200, body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] } }),
+          normalized_output: { status: 200, body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] } },
+          captured_at: "2025-01-15T09:01:05Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({ status: 200, body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] } }),
+          normalized_output: { status: 200, body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] } },
+          captured_at: "2025-01-15T09:01:05Z",
+        },
+        verdict: "preserved",
+        changed: false,
+        explanation: "Search results are identical on both baseline and candidate.",
+      },
+
+      // Step 2 — Open Product: intentional change (caching applied, still correct)
+      {
+        step_id: "step-2",
+        sequence: 2,
+        name: "Open Product",
+        action: "GET /products/product-99",
+        expected_hint: "Returns product detail including current price",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({ status: 200, body: { id: "product-99", name: "Widget", price: 9.99, source: "db" } }),
+          normalized_output: { status: 200, body: { id: "product-99", name: "Widget", price: 9.99, source: "db" } },
+          captured_at: "2025-01-15T09:01:10Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({ status: 200, body: { id: "product-99", name: "Widget", price: 9.99, source: "cache" } }),
+          normalized_output: { status: 200, body: { id: "product-99", name: "Widget", price: 9.99, source: "cache" } },
+          captured_at: "2025-01-15T09:01:10Z",
+        },
+        verdict: "intentional_change",
+        confidence_source: "inferred",
+        confidence_score: 0.95,
+        changed: false,
+        explanation:
+          "Product detail now served from cache instead of DB. Price and name are correct — this is the intended caching change.",
+      },
+
+      // Step 3 — Read Inventory: REGRESSION — divergence here
+      {
+        step_id: "step-3",
+        sequence: 3,
+        name: "Read Inventory",
+        action: "GET /products/product-99 (post-inventory-write)",
+        expected_hint:
+          "Must return stock=1 after inventory was updated to stock=1",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({ status: 200, body: { id: "product-99", stock: 1, price: 9.99 } }),
+          normalized_output: { status: 200, body: { id: "product-99", stock: 1, price: 9.99 } },
+          captured_at: "2025-01-15T09:02:10Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({ status: 200, body: { id: "product-99", stock: 3, price: 9.99 } }),
+          normalized_output: { status: 200, body: { id: "product-99", stock: 3, price: 9.99 } },
+          captured_at: "2025-01-15T09:02:25Z",
+        },
+        verdict: "regression",
+        confidence_source: "contract_derived",
+        confidence_score: 1.0,
+        changed: true,
+        explanation:
+          "Inventory update → stock becomes 1 on baseline. Candidate returns stale cached value stock=3. Cache was not invalidated on write.",
+      },
+
+      // Step 4 — Add to Cart: preserved
+      {
+        step_id: "step-4",
+        sequence: 4,
+        name: "Add Item to Cart",
+        action: "PUT /cart/cart-42/product-99",
+        expected_hint: "Cart reflects newly added item",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({ status: 200, body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] } }),
+          normalized_output: { status: 200, body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] } },
+          captured_at: "2025-01-15T09:02:40Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({ status: 200, body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] } }),
+          normalized_output: { status: 200, body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] } },
+          captured_at: "2025-01-15T09:02:40Z",
+        },
+        verdict: "preserved",
+        changed: false,
+        explanation:
+          "Cart add operation is unaffected by caching. Identical on both sides.",
+      },
+
+      // Step 5 — Checkout: preserved
+      {
+        step_id: "step-5",
+        sequence: 5,
+        name: "Checkout",
+        action: "POST /checkout",
+        expected_hint: "Order confirmed with correct total",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({ status: 200, body: { order_id: "ord-123", total: 9.99, status: "confirmed" } }),
+          normalized_output: { status: 200, body: { order_id: "ord-123", total: 9.99, status: "confirmed" } },
+          captured_at: "2025-01-15T09:03:00Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({ status: 200, body: { order_id: "ord-123", total: 9.99, status: "confirmed" } }),
+          normalized_output: { status: 200, body: { order_id: "ord-123", total: 9.99, status: "confirmed" } },
+          captured_at: "2025-01-15T09:03:00Z",
+        },
+        verdict: "preserved",
+        changed: false,
+        explanation: "Checkout total and status are identical on both sides.",
+      },
+    ],
+  };
+
+  return replay;
+};
+
 // ---------------------------------------------------------------------------
 // Exported for tests only
 // ---------------------------------------------------------------------------
@@ -468,3 +694,4 @@ export function _setMockReportState(
   // Store report override on the mock run object (type-extended for tests)
   (mockRun as MockRun & { _reportOverride?: RehearsalReport })._reportOverride = report;
 }
+

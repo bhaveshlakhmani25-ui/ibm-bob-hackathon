@@ -72,27 +72,7 @@ function getStepIndex(phase: string): number {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function StatusBadge({ status }: { status: RunStatus | "queued" }) {
-  const classMap: Record<string, string> = {
-    running: "badge badge-running",
-    queued: "badge badge-queued",
-    completed: "badge badge-completed",
-    failed: "badge badge-failed",
-    build_failed: "badge badge-failed",
-  };
-  const labelMap: Record<string, string> = {
-    running: "Running",
-    queued: "Queued",
-    completed: "Complete",
-    failed: "Failed",
-    build_failed: "Build Failed",
-  };
-  return (
-    <span className={classMap[status] ?? "badge"}>
-      {labelMap[status] ?? status}
-    </span>
-  );
-}
+
 
 function BuildStatusPill({
   label,
@@ -115,40 +95,7 @@ function BuildStatusPill({
   );
 }
 
-function PhaseRow({
-  label,
-  isActive,
-  isDone,
-  isFailed,
-}: {
-  label: string;
-  isActive: boolean;
-  isDone: boolean;
-  isFailed: boolean;
-}) {
-  let icon: React.ReactNode;
-  let rowClass = "phase-row";
 
-  if (isFailed) {
-    icon = <span className="phase-icon icon-failed">✗</span>;
-    rowClass += " phase-failed";
-  } else if (isDone) {
-    icon = <span className="phase-icon icon-done">✓</span>;
-    rowClass += " phase-done";
-  } else if (isActive) {
-    icon = <span className="phase-icon"><span className="spinner" /></span>;
-    rowClass += " phase-active";
-  } else {
-    icon = <span className="phase-icon icon-pending">○</span>;
-  }
-
-  return (
-    <li className={rowClass}>
-      {icon}
-      <span className="phase-label">{label}</span>
-    </li>
-  );
-}
 
 function TerminalOutcome({
   status,
@@ -280,6 +227,17 @@ export function RehearsalProgressView({
   const [pollError, setPollError] = useState<string | null>(null);
   const pollErrorCountRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  // Elapsed time tracker
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const mountTimeRef = useRef(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedMs(Date.now() - mountTimeRef.current);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // -------------------------------------------------------------------------
   // Polling
@@ -344,12 +302,22 @@ export function RehearsalProgressView({
 
   return (
     <div className="progress-view">
-      {/* Header */}
-      <div className="pv-header">
+      {/* Flight Simulator Header */}
+      <div className="pv-header-flight">
         <div className="pv-header-left">
+          <div className="pv-status-indicator">
+            <span className={`status-dot ${overallStatus === 'running' || overallStatus === 'queued' ? 'pulsing' : ''}`}></span>
+            <span className="status-text">{overallStatus.replace('_', ' ')}</span>
+          </div>
           <code className="run-id-badge">{runId}</code>
-          <StatusBadge status={overallStatus} />
         </div>
+        <div className="pv-header-right">
+          <div className="pv-elapsed">
+            <span className="pv-elapsed-label">ELAPSED</span>
+            <span className="pv-elapsed-value">{(elapsedMs / 1000).toFixed(1)}s</span>
+          </div>
+        </div>
+      </div>
         {statusData && (
           <div className="build-pills">
             <BuildStatusPill
@@ -362,7 +330,6 @@ export function RehearsalProgressView({
             />
           </div>
         )}
-      </div>
 
       {/* Intent */}
       <div className="pv-intent">
@@ -370,33 +337,34 @@ export function RehearsalProgressView({
         <span className="pv-intent-text">{requirement}</span>
       </div>
 
-      {/* Phase list */}
-      <ul className="phase-list" aria-label="Rehearsal phases">
+      {/* Current phase prominent display */}
+      <div className="pv-active-phase">
+        <span className="pv-active-phase-label">CURRENT ACTIVITY</span>
+        <h3 className="pv-active-phase-title">
+          {terminal ? (statusData?.status === "completed" ? "Execution Finished" : "Execution Halted") : `${UI_STEPS[currentStepIdx]?.label ?? "Initializing"}...`}
+        </h3>
+      </div>
+
+      {/* Stage Timeline (Horizontal) */}
+      <div className="pv-stage-timeline" role="list" aria-label="Rehearsal phases">
         {UI_STEPS.map((step, stepIdx) => {
           const isDone =
             !terminal
               ? stepIdx < currentStepIdx
               : statusData?.status === "completed"
-                ? true // all phases done on success
-                : stepIdx < currentStepIdx; // done phases before failure
-          const isActive =
-            !terminal && stepIdx === currentStepIdx;
-          const isFailed =
-            terminal &&
-            statusData?.status !== "completed" &&
-            stepIdx === currentStepIdx;
+                ? true
+                : stepIdx < currentStepIdx;
+          const isActive = !terminal && stepIdx === currentStepIdx;
+          const isFailed = terminal && statusData?.status !== "completed" && stepIdx === currentStepIdx;
 
           return (
-            <PhaseRow
-              key={step.id}
-              label={step.label}
-              isActive={isActive}
-              isDone={isDone}
-              isFailed={isFailed}
-            />
+            <div role="listitem" key={step.id} className={`pv-stage-node ${isActive ? 'active phase-active' : ''} ${isDone ? 'done phase-done' : ''} ${isFailed ? 'failed phase-failed' : ''}`}>
+              <div className="pv-stage-dot"></div>
+              <div className="pv-stage-label">{step.label}</div>
+            </div>
           );
         })}
-      </ul>
+      </div>
 
       {/* Incomplete coverage notice */}
       {!terminal && currentPhase === "queued" && (

@@ -238,6 +238,80 @@ export interface EvidenceDetail {
 }
 
 // ---------------------------------------------------------------------------
+// 4.4a  GET /api/rehearsals/:run_id/journey-replay/:journey_id
+//
+// B05 — Journey Replay
+//
+// Returns a step-by-step replay of a single journey execution, pairing the
+// baseline and candidate results per step so the developer can pinpoint the
+// exact divergence.
+//
+// This is a PURELY ADDITIVE model. It does NOT replace BehavioralDiffRow.
+// ---------------------------------------------------------------------------
+
+/**
+ * The result of executing a single JourneyStep on both baseline and candidate.
+ *
+ * Uses the existing Observation and Verdict types from §4.3.
+ * `changed` is the authoritative flag set by the rehearsal engine — the UI
+ * must not infer a divergence from text differences alone.
+ */
+export interface ReplayStepResult {
+  /** Matches JourneyStep.id */
+  step_id: string;
+  /** 1-based display order (matches JourneyStep.sequence) */
+  sequence: number;
+  /** Human-readable step name (from JourneyStep.description) */
+  name: string;
+  /** The action exercised at this step */
+  action: string;
+  /** Expected / protected behavior hint if available */
+  expected_hint?: string;
+  /** Baseline side observation (null when step was not exercised on baseline) */
+  baseline_result: Observation | null;
+  /** Candidate side observation (null when step was not exercised on candidate) */
+  candidate_result: Observation | null;
+  /** Canonical verdict from the rehearsal engine for this step */
+  verdict: Verdict;
+  /** Confidence source from the associated ProtectedBehavior, if linked */
+  confidence_source?: ConfidenceLevel;
+  /** Numeric confidence 0.0–1.0 */
+  confidence_score?: number;
+  /**
+   * Set by the rehearsal engine. TRUE only when the engine determined baseline
+   * and candidate diverged for this step. The UI must use this flag — not a
+   * text comparison — to highlight the divergence.
+   */
+  changed: boolean;
+  /**
+   * Deterministic explanation derived from verdict + diff_detail.
+   * NOT AI-generated. Summarises what the engine found (e.g. "stock: 3 → 10").
+   */
+  explanation?: string;
+}
+
+/**
+ * Full journey replay for a single journey.
+ *
+ * Returned by GET /api/rehearsals/:run_id/journey-replay/:journey_id.
+ * Wraps the existing Journey with per-step ReplayStepResult pairs.
+ */
+export interface JourneyReplayDetail {
+  /** The rehearsal run this replay belongs to */
+  run_id: string;
+  /** Original journey definition */
+  journey: Journey;
+  /** Overall verdict for the journey replay (from JourneyReplay.verdict) */
+  overall_verdict: Verdict;
+  /** Confidence source for the overall journey verdict */
+  confidence_source?: ConfidenceLevel;
+  /** Numeric confidence 0.0–1.0 */
+  confidence_score?: number;
+  /** Ordered replay results, one per JourneyStep */
+  steps: ReplayStepResult[];
+}
+
+// ---------------------------------------------------------------------------
 // 4.5  POST /api/rehearsals/:run_id/rerun
 // ---------------------------------------------------------------------------
 
