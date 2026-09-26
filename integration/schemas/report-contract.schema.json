@@ -56,7 +56,7 @@
           "journey_name": { "type": "string", "minLength": 1 },
           "verdict": {
             "type": "string",
-            "enum": ["unchanged", "changed", "potentially_affected", "not_exercised"]
+            "enum": ["unchanged", "changed", "potentially_affected", "not_exercised", "preserved", "intentional_change", "regression"]
           },
           "confidence_source": {
             "type": "string",

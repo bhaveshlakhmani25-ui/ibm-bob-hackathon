@@ -46,7 +46,7 @@ const runs = new Map<string, RunEntry>();
 // ShopFlow fixture
 // ---------------------------------------------------------------------------
 
-const SHOPFLOW_REPORT: Omit<RehearsalReport, "run_id"> = {
+const SHOPFLOW_REPORT: Omit<RehearsalReport, "rehearsal_run_id"> = {
   change: {
     base_ref: "main",
     candidate_ref: "feature/product-cache",
@@ -165,7 +165,7 @@ const SHOPFLOW_REPORT: Omit<RehearsalReport, "run_id"> = {
       related_code_refs: ["src/services/PricingService.ts"],
     },
   ],
-  behavioral_diff: [
+  behavioral_diff_rows: [
     {
       journey_id: "j1",
       journey_name: "Product browsing",
@@ -179,6 +179,7 @@ const SHOPFLOW_REPORT: Omit<RehearsalReport, "run_id"> = {
       verdict: "regression",
       protected_behavior_id: "pb1",
       protected_behavior_source: "test_derived",
+      protected_behavior_confidence: 0.95,
       is_expected_change: false,
       scenario_id: "sc2",
       evidence_id: "ev2",
@@ -247,6 +248,10 @@ const SHOPFLOW_REPORT: Omit<RehearsalReport, "run_id"> = {
     potentially_affected: 0,
     verdict: "review_required",
   },
+  capsule_ref: {
+    json_path: "rehearsal-report.json",
+    markdown_path: "rehearsal-report.md",
+  },
   generated_at: new Date().toISOString(),
 };
 
@@ -311,7 +316,7 @@ const server = http.createServer(async (req, res) => {
     try {
       parsed = JSON.parse(body);
     } catch {
-      return respond(res, 400, { error: "Invalid JSON body" });
+      return respond(res, 400, { error: "Invalid JSON body", error_code: "INVALID_INPUT_CONTRACT" });
     }
 
     const run_id = `mock-run-${Date.now()}`;
@@ -332,7 +337,7 @@ const server = http.createServer(async (req, res) => {
     const run_id = statusMatch[1] as string;
     const run = runs.get(run_id);
     if (!run) {
-      return respond(res, 404, { error: "Run not found" });
+      return respond(res, 404, { error: "Run not found", error_code: "REHEARSAL_ENGINE_UNAVAILABLE" });
     }
 
     const phase = getCurrentPhase(run.started_at);
@@ -355,13 +360,13 @@ const server = http.createServer(async (req, res) => {
   if (method === "GET" && reportMatch) {
     const run_id = reportMatch[1] as string;
     if (!runs.has(run_id)) {
-      return respond(res, 404, { error: "Run not found" });
+      return respond(res, 404, { error: "Run not found", error_code: "REHEARSAL_ENGINE_UNAVAILABLE" });
     }
-    const report: RehearsalReport = { run_id, ...SHOPFLOW_REPORT };
+    const report: RehearsalReport = { rehearsal_run_id: run_id, ...SHOPFLOW_REPORT };
     return respond(res, 200, report);
   }
 
-  return respond(res, 404, { error: "Not found" });
+  return respond(res, 404, { error: "Not found", error_code: "REHEARSAL_ENGINE_UNAVAILABLE" });
 });
 
 /**

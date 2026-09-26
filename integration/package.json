@@ -4,8 +4,9 @@
   "description": "Integration layer contract validation and tests for Change Rehearsal.",
   "private": true,
   "scripts": {
-    "test": "node tests/validate-contracts.js",
-    "validate": "node tests/validate-contracts.js"
+    "test": "node tests/validate-contracts.js && node tests/e2e-smoke.js",
+    "validate": "node tests/validate-contracts.js",
+    "smoke": "node tests/e2e-smoke.js"
   },
   "dependencies": {
     "ajv": "^8.17.1",

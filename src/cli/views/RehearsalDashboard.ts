@@ -122,6 +122,12 @@ export async function runDashboard(
       return { exitCode: EXIT.OK, finalStatus: status };
     }
 
+    // "partial" = some scenarios not exercised; treat as completed so the
+    // report is still fetched and rendered (regressions field governs exit code).
+    if ((status.status as string) === "partial") {
+      return { exitCode: EXIT.OK, finalStatus: status };
+    }
+
     if (status.status === "build_failed") {
       renderBuildFailure(status);
       return { exitCode: EXIT.EXECUTION_FAILURE, finalStatus: status };
