@@ -3,6 +3,7 @@ import type {
   StartRehearsalResponse,
   RehearsalStatusResponse,
   RehearsalPhase,
+  RehearsalReport,
 } from "../../../src/shared/contracts";
 
 // ---------------------------------------------------------------------------
@@ -192,6 +193,238 @@ export const getRehearsalStatus = async (
   return { ...mockRun.status };
 };
 
+/**
+ * GET /api/rehearsals/:id/report
+ *
+ * MOCK: Returns a deterministic RehearsalReport typed exactly against the
+ * canonical contracts (§4.3). All five Tier-2 verdict values are represented.
+ * Replace with a real fetch() call when Reuben's comparator is available.
+ *
+ * Mock data is isolated here and not used by any other path.
+ */
+export const getRehearsalReport = async (
+  runId: string,
+): Promise<RehearsalReport> => {
+  await delay(600); // MOCK: simulate network round-trip
+
+  if (runId !== mockRunId || !mockRun) {
+    throw new Error(`Rehearsal not found: ${runId}`);
+  }
+
+  if (mockRun.status.status !== "completed") {
+    throw new Error(`Report not ready. Status: ${mockRun.status.status}`);
+  }
+
+  // Return test-injected override if present (used by unit tests)
+  const override = (mockRun as MockRun & { _reportOverride?: RehearsalReport })._reportOverride;
+  if (override) return override;
+
+  // ---------------------------------------------------------------------------
+  // MOCK REPORT — deterministic, isolated, typed against contracts
+  // Replace all fields below with real engine output when Reuben's comparator
+  // is wired in. Do not reference this data outside of this function.
+  // ---------------------------------------------------------------------------
+  const report: RehearsalReport = {
+    run_id: runId,
+    change: {
+      base_ref: "main",
+      candidate_ref: "feature/product-cache",
+      diff_summary: "Added Redis caching to the product retrieval API path.",
+      affected_files: [
+        "src/services/ProductService.ts",
+        "src/services/CacheService.ts",
+      ],
+    },
+    requirement: {
+      text: "Add caching to Product API to improve response time.",
+      source: "free_text",
+    },
+    intent: {
+      description: "Improve Product API response time via caching",
+      expected_changes: [
+        "Product API response path gains Redis caching",
+        "Cache miss falls back to DB as before",
+      ],
+    },
+    journeys: [
+      {
+        id: "j-1",
+        name: "Fetch Product Details",
+        description: "GET /products/:id returns product with current stock.",
+        type: "api",
+        source: "requirement",
+        confidence: "test_derived",
+        steps: [],
+      },
+      {
+        id: "j-2",
+        name: "Update Inventory Stock",
+        description: "POST /inventory/:id updates stock and subsequent GET reflects new value.",
+        type: "api",
+        source: "impact",
+        confidence: "contract_derived",
+        steps: [],
+      },
+      {
+        id: "j-3",
+        name: "Add Item to Cart",
+        description: "PUT /cart/:id/:product_id succeeds and cart reflects item.",
+        type: "user",
+        source: "inferred",
+        confidence: "test_derived",
+        steps: [],
+      },
+      {
+        id: "j-4",
+        name: "User Login",
+        description: "POST /auth/login returns a session token.",
+        type: "user",
+        source: "inferred",
+        confidence: "inferred",
+        steps: [],
+      },
+      {
+        id: "j-5",
+        name: "Checkout Process",
+        description: "Full checkout: add to cart → confirm → receive order ID.",
+        type: "user",
+        source: "impact",
+        confidence: "inferred",
+        steps: [],
+      },
+    ],
+    protected_behaviors: [
+      {
+        id: "pb-1",
+        description: "GET /products/:id returns correct cached response after first load.",
+        source: "inferred",
+        confidence: 0.95,
+        related_code_refs: ["src/services/ProductService.ts:fetchProduct"],
+      },
+      {
+        id: "pb-2",
+        description: "GET /products/:id always reflects the latest inventory stock after an update.",
+        source: "contract_derived",
+        confidence: 1.0,
+        related_code_refs: ["src/services/ProductService.ts:fetchProduct", "src/services/CacheService.ts:invalidate"],
+      },
+      {
+        id: "pb-3",
+        description: "Cart operations are unaffected by product caching changes.",
+        source: "test_derived",
+        confidence: 0.98,
+        related_code_refs: ["src/services/CartService.ts:addItem"],
+      },
+      {
+        id: "pb-5",
+        description: "Checkout price calculation uses current product price.",
+        source: "inferred",
+        confidence: 0.60,
+        related_code_refs: ["src/services/CheckoutService.ts:calculateTotal"],
+      },
+    ],
+    regressions: [
+      {
+        id: "reg-1",
+        behavioral_difference_id: "bd-2",
+        journey_id: "j-2",
+        journey_name: "Update Inventory Stock",
+        protected_behavior_id: "pb-2",
+        protected_behavior_description:
+          "GET /products/:id always reflects the latest inventory stock after an update.",
+        severity: "high",
+        recommended_action:
+          "Invalidate the Redis cache entry for the product on every inventory write in CacheService.ts, or bypass cache for stock reads.",
+        evidence: {
+          scenario_id: "sc-2",
+          baseline_observation: {
+            side: "baseline",
+            raw_output: JSON.stringify({ status: 200, body: { id: "product-99", name: "Widget", stock: 3, price: 9.99 } }),
+            normalized_output: { status: 200, body: { id: "product-99", name: "Widget", stock: 3, price: 9.99 } },
+            captured_at: "2025-01-15T09:02:10Z",
+          },
+          candidate_observation: {
+            side: "candidate",
+            raw_output: JSON.stringify({ status: 200, body: { id: "product-99", name: "Widget", stock: 10, price: 9.99 } }),
+            normalized_output: { status: 200, body: { id: "product-99", name: "Widget", stock: 10, price: 9.99 } },
+            captured_at: "2025-01-15T09:02:25Z",
+          },
+          reproduction_steps: [
+            "POST /inventory/product-99 with { stock: 3 }",
+            "GET /products/product-99",
+            "Observe candidate returns stale stock=10 instead of 3",
+          ],
+          affected_files: [
+            "src/services/CacheService.ts",
+            "src/services/ProductService.ts",
+          ],
+        },
+      },
+    ],
+    generated_at: new Date().toISOString(),
+    summary: {
+      total_journeys: 5,
+      total_scenarios: 5,
+      preserved: 1,
+      intentional_changes: 1,
+      regressions: 1,
+      not_exercised: 1,
+      potentially_affected: 1,
+      verdict: "review_required",
+    },
+    behavioral_diff: [
+      {
+        journey_id: "j-1",
+        journey_name: "Fetch Product Details",
+        verdict: "intentional_change",
+        protected_behavior_id: "pb-1",
+        protected_behavior_source: "inferred",
+        protected_behavior_confidence: 0.95,
+        is_expected_change: true,
+        scenario_id: "sc-1",
+      },
+      {
+        journey_id: "j-2",
+        journey_name: "Update Inventory Stock",
+        verdict: "regression",
+        protected_behavior_id: "pb-2",
+        protected_behavior_source: "contract_derived",
+        protected_behavior_confidence: 1.0,
+        is_expected_change: false,
+        scenario_id: "sc-2",
+        evidence_id: "reg-1",
+      },
+      {
+        journey_id: "j-3",
+        journey_name: "Add Item to Cart",
+        verdict: "preserved",
+        protected_behavior_id: "pb-3",
+        protected_behavior_source: "test_derived",
+        protected_behavior_confidence: 0.98,
+        is_expected_change: false,
+        scenario_id: "sc-3",
+      },
+      {
+        journey_id: "j-4",
+        journey_name: "User Login",
+        verdict: "not_exercised",
+        is_expected_change: false,
+      },
+      {
+        journey_id: "j-5",
+        journey_name: "Checkout Process",
+        verdict: "potentially_affected",
+        protected_behavior_id: "pb-5",
+        protected_behavior_source: "inferred",
+        protected_behavior_confidence: 0.60,
+        is_expected_change: false,
+      },
+    ],
+  };
+
+  return report;
+};
+
 // ---------------------------------------------------------------------------
 // Exported for tests only
 // ---------------------------------------------------------------------------
@@ -209,4 +442,29 @@ export function _setMockRunState(
 ): void {
   mockRunId = runId;
   mockRun = { status: { ...status }, startedAt: Date.now() };
+}
+
+/**
+ * Override the report returned by getRehearsalReport for a given runId.
+ * Used in tests to inject specific RehearsalReport fixtures.
+ */
+export function _setMockReportState(
+  runId: string,
+  report: RehearsalReport,
+): void {
+  mockRunId = runId;
+  mockRun = {
+    status: {
+      run_id: runId,
+      status: "completed",
+      phase: "completed",
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      baseline_build_status: "success",
+      candidate_build_status: "success",
+    },
+    startedAt: Date.now(),
+  };
+  // Store report override on the mock run object (type-extended for tests)
+  (mockRun as MockRun & { _reportOverride?: RehearsalReport })._reportOverride = report;
 }
