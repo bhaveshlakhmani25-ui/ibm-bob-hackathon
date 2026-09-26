@@ -1,0 +1,55 @@
+[
+  {
+    "id": "journey-inventory-visibility",
+    "changeId": "__fixture__",
+    "name": "inventory-visibility-after-update",
+    "description": "Update inventory stock, then read the product and assert the displayed stock reflects the update.",
+    "type": "api",
+    "priority": 1,
+    "source": "requirement",
+    "confidence": "inferred",
+    "steps": [
+      {
+        "id": "step-1-seed",
+        "journeyId": "journey-inventory-visibility",
+        "sequence": 1,
+        "actionType": "http",
+        "input": {
+          "kind": "http",
+          "method": "POST",
+          "path": "/test/seed",
+          "body": {
+            "products": [{ "id": 1, "name": "Widget", "price": 9.99 }],
+            "inventory": [{ "productId": 1, "stock": 5 }]
+          }
+        },
+        "expectedHint": "200 OK"
+      },
+      {
+        "id": "step-2-update-inventory",
+        "journeyId": "journey-inventory-visibility",
+        "sequence": 2,
+        "actionType": "http",
+        "input": {
+          "kind": "http",
+          "method": "PUT",
+          "path": "/inventory/1",
+          "body": { "stock": 3 }
+        },
+        "expectedHint": "200 OK, stock updated"
+      },
+      {
+        "id": "step-3-read-product",
+        "journeyId": "journey-inventory-visibility",
+        "sequence": 3,
+        "actionType": "http",
+        "input": {
+          "kind": "http",
+          "method": "GET",
+          "path": "/products/1"
+        },
+        "expectedHint": "body.stock === 3"
+      }
+    ]
+  }
+]
