@@ -54,10 +54,7 @@ export function execGit(
       return '';
     }
 
-    const stderr =
-      spawnErr.stderr instanceof Buffer
-        ? spawnErr.stderr.toString('utf8')
-        : (spawnErr.stderr ?? '');
+    const stderr = spawnErr.stderr ? spawnErr.stderr.toString() : '';
 
     // Distinguish ref-not-found from general command failure
     if (isRefNotFound(stderr)) {

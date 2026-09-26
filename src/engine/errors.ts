@@ -38,7 +38,12 @@ export type EngineErrorCode =
   | 'OBSERVATION_NORMALIZATION_FAILED'
   // --- Evidence / IO ---
   | 'EVIDENCE_WRITE_FAILED'
-  | 'RUN_NOT_FOUND';
+  | 'RUN_NOT_FOUND'
+  // --- Behavior / Journey model (R03) ---
+  | 'BEHAVIOR_DUPLICATE_ID'
+  | 'BEHAVIOR_INVALID'
+  | 'BEHAVIOR_UNKNOWN_REFERENCE'
+  | 'BEHAVIOR_DESERIALIZATION_FAILED';
 
 export class EngineError extends Error {
   public readonly name = 'EngineError';
