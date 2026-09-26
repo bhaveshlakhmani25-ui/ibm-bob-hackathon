@@ -295,7 +295,7 @@ describe("E2E smoke: run_id propagation and partial-status terminal handling", (
 
     // run_id must be present in report
     const report: RehearsalReport = await fetchReport(run_id, baseUrl);
-    expect(report.run_id).toBe(run_id);
+    expect(report.rehearsal_run_id).toBe(run_id);
   });
 
   it("runDashboard treats 'partial' Reuben status as a terminal state (does not loop)", async () => {
