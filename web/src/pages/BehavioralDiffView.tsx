@@ -32,6 +32,9 @@ import type {
 } from "../../../src/shared/contracts";
 import { getRehearsalReport } from "../services/api";
 import { JourneyReplayView } from "./JourneyReplayView";
+import { EvidenceCapsuleView } from "./EvidenceCapsuleView";
+import { DeveloperActionsPanel } from "./DeveloperActionsPanel";
+import React from "react";
 
 // ---------------------------------------------------------------------------
 // Verdict display helpers
@@ -310,11 +313,15 @@ function SummaryScoreboard({ report }: { report: RehearsalReport }) {
 }
 
 function DiffTable({
+  runId,
   report,
   onReplayJourney,
+  onViewEvidence,
 }: {
+  runId: string;
   report: RehearsalReport;
   onReplayJourney?: (journeyId: string) => void;
+  onViewEvidence?: (journeyId: string) => void;
 }) {
   const rows = report.behavioral_diff_rows;
 
@@ -360,12 +367,19 @@ function DiffTable({
         </thead>
         <tbody>
           {sorted.map((row) => (
-            <DiffRow
-              key={`${row.journey_id ?? row.journey_name}-${row.verdict}`}
-              row={row}
-              report={report}
-              onReplayJourney={onReplayJourney}
-            />
+            <React.Fragment key={`${row.journey_id ?? row.journey_name}-${row.verdict}`}>
+              <DiffRow
+                row={row}
+                report={report}
+                onReplayJourney={onReplayJourney}
+              />
+              <DeveloperActionsPanel
+                runId={runId}
+                journeyId={row.journey_id}
+                verdict={row.verdict}
+                onViewEvidence={() => onViewEvidence?.(row.journey_id)}
+              />
+            </React.Fragment>
           ))}
         </tbody>
       </table>
@@ -395,6 +409,7 @@ export function BehavioralDiffView({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
+  const [evidenceJourneyId, setEvidenceJourneyId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -460,23 +475,35 @@ export function BehavioralDiffView({
       )}
 
       {/* Main content */}
-      {!isLoading && report && !selectedJourneyId && (
+      {!isLoading && report && !selectedJourneyId && !evidenceJourneyId && (
         <>
           <SummaryScoreboard report={report} />
           <DiffTable
+            runId={runId}
             report={report}
             onReplayJourney={setSelectedJourneyId}
+            onViewEvidence={setEvidenceJourneyId}
           />
         </>
       )}
 
-      {/* Journey Replay View — B05 (contains Evidence Capsule button → B06) */}
-      {selectedJourneyId && (
+      {/* Journey Replay View — B05 */}
+      {selectedJourneyId && !evidenceJourneyId && (
         <JourneyReplayView
           runId={runId}
           requirement={requirement}
           journeyId={selectedJourneyId}
           onBack={() => setSelectedJourneyId(null)}
+          onViewEvidence={() => setEvidenceJourneyId(selectedJourneyId)}
+        />
+      )}
+
+      {/* Evidence Capsule View — B06 */}
+      {evidenceJourneyId && (
+        <EvidenceCapsuleView
+          runId={runId}
+          requirement={requirement}
+          onBack={() => setEvidenceJourneyId(null)}
         />
       )}
     </div>

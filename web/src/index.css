@@ -1195,3 +1195,156 @@ button.primary:disabled {
   font-style: italic;
   color: var(--text-muted);
 }
+
+/* ==========================================================================
+   DEVELOPER ACTIONS (B07)
+   ========================================================================== */
+.developer-actions-row {
+  background: var(--surface-bg);
+}
+
+.developer-actions-cell {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--danger-text);
+  background: rgba(248, 81, 73, 0.05);
+}
+
+.dev-actions-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dev-actions-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.dev-actions-header strong {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.dev-actions-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.dev-actions-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dev-action-input-group {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.dev-action-note-input {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  min-width: 200px;
+}
+
+.dev-action-note-input:focus {
+  outline: 1px solid var(--primary);
+  border-color: var(--primary);
+}
+
+.dev-proposal-card {
+  background: #0f0f11;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dev-proposal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.dev-proposal-header strong {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.dev-proposal-status {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #ffcc00;
+  font-weight: 700;
+}
+
+.dev-proposal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dev-proposal-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dev-proposal-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.dev-proposal-value {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.dev-proposal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.dev-rerun-help {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  max-width: 60%;
+}
+
+.dev-decision-card {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.dev-decision-card strong {
+  color: var(--text-primary);
+  margin-right: 8px;
+}
+
