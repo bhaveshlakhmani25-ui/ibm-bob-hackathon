@@ -1,0 +1,14 @@
+{
+  "name": "change-rehearsal-integration",
+  "version": "0.1.0",
+  "description": "Integration layer contract validation and tests for Change Rehearsal.",
+  "private": true,
+  "scripts": {
+    "test": "node tests/validate-contracts.js",
+    "validate": "node tests/validate-contracts.js"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}

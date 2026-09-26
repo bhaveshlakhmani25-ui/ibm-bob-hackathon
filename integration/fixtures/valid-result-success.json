@@ -1,0 +1,123 @@
+{
+  "contract_version": "0.1",
+  "rehearsal_run": {
+    "id": "run-001",
+    "change_id": "chg-shopflow-001",
+    "started_at": "2025-01-15T09:01:00Z",
+    "completed_at": "2025-01-15T09:03:45Z",
+    "status": "completed",
+    "baseline_build_status": "success",
+    "candidate_build_status": "success"
+  },
+  "journey_replays": [
+    {
+      "id": "replay-001",
+      "rehearsal_run_id": "run-001",
+      "journey_id": "jrn-001",
+      "baseline_status": "pass",
+      "candidate_status": "fail",
+      "baseline_observation_refs": ["obs-001"],
+      "candidate_observation_refs": ["obs-002"],
+      "verdict": "changed"
+    },
+    {
+      "id": "replay-002",
+      "rehearsal_run_id": "run-001",
+      "journey_id": "jrn-002",
+      "baseline_status": "pass",
+      "candidate_status": "pass",
+      "baseline_observation_refs": ["obs-003"],
+      "candidate_observation_refs": ["obs-004"],
+      "verdict": "unchanged"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-001",
+      "rehearsal_run_id": "run-001",
+      "scenario_id": "scn-001",
+      "side": "baseline",
+      "raw_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "stock": 3, "price": 9.99 } },
+      "normalized_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "stock": 3, "price": 9.99 } },
+      "captured_at": "2025-01-15T09:02:10Z"
+    },
+    {
+      "id": "obs-002",
+      "rehearsal_run_id": "run-001",
+      "scenario_id": "scn-001",
+      "side": "candidate",
+      "raw_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "stock": 10, "price": 9.99 } },
+      "normalized_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "stock": 10, "price": 9.99 } },
+      "captured_at": "2025-01-15T09:02:25Z"
+    },
+    {
+      "id": "obs-003",
+      "rehearsal_run_id": "run-001",
+      "scenario_id": "scn-002",
+      "side": "baseline",
+      "raw_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "price": 9.99 } },
+      "normalized_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "price": 9.99 } },
+      "captured_at": "2025-01-15T09:03:00Z"
+    },
+    {
+      "id": "obs-004",
+      "rehearsal_run_id": "run-001",
+      "scenario_id": "scn-002",
+      "side": "candidate",
+      "raw_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "price": 9.99 } },
+      "normalized_output": { "status": 200, "body": { "id": "product-99", "name": "Widget", "price": 9.99 } },
+      "captured_at": "2025-01-15T09:03:15Z"
+    }
+  ],
+  "behavioral_differences": [
+    {
+      "id": "bd-001",
+      "scenario_id": "scn-001",
+      "journey_id": "jrn-001",
+      "verdict": "changed",
+      "diff_detail": {
+        "field": "body.stock",
+        "baseline_value": 3,
+        "candidate_value": 10,
+        "description": "Candidate returned stale cached stock (10) instead of the updated value (3)."
+      },
+      "is_expected": false
+    },
+    {
+      "id": "bd-002",
+      "scenario_id": "scn-002",
+      "journey_id": "jrn-002",
+      "verdict": "unchanged",
+      "diff_detail": null,
+      "is_expected": false
+    }
+  ],
+  "regressions": [
+    {
+      "id": "reg-001",
+      "behavioral_difference_id": "bd-001",
+      "protected_behavior_id": "pb-001",
+      "severity": "high",
+      "recommended_action": "Invalidate cache on inventory update in productService.ts, or bypass cache for stock reads."
+    }
+  ],
+  "evidence_capsule": {
+    "id": "cap-001",
+    "rehearsal_run_id": "run-001",
+    "change_summary": "Add caching to Product API (feature/product-cache). Files: productService.ts, cache.ts.",
+    "requirement_summary": "Add caching to the Product API to improve response time.",
+    "journey_refs": ["jrn-001", "jrn-002"],
+    "protected_behavior_refs": ["pb-001", "pb-002"],
+    "scenario_refs": ["scn-001", "scn-002"],
+    "behavioral_difference_refs": ["bd-001", "bd-002"],
+    "evidence_refs": ["obs-001", "obs-002", "obs-003", "obs-004"],
+    "reproduction_refs": [
+      "1. Update inventory for product-99 to stock=3",
+      "2. GET /products/product-99",
+      "3. Observe candidate returns stale stock=10 instead of 3"
+    ],
+    "recommendation": "REVIEW REQUIRED — 1 regression detected. Inventory freshness violated by caching layer.",
+    "generated_at": "2025-01-15T09:04:00Z",
+    "formats": ["json", "markdown"]
+  }
+}
