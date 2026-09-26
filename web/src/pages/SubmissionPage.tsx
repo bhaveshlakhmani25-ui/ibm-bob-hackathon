@@ -1,16 +1,19 @@
 /**
  * SubmissionPage — Change Rehearsal submission flow (B02) +
- *                  Rehearsal progress experience wiring (B03).
+ *                  Rehearsal progress experience wiring (B03) +
+ *                  Behavioral Diff navigation wiring (B04).
  *
  * Responsibilities:
  *  - Collect repository, branch, and requirement from the developer.
  *  - POST /api/rehearsals via startRehearsal().
  *  - Hand off to RehearsalProgressView once a run_id is obtained.
+ *  - Transition to BehavioralDiffView when the user opens the diff.
  *  - Preserve all submission context (intent, repo, refs) throughout.
  */
 import { useState } from "react";
 import { startRehearsal } from "../services/api";
 import { RehearsalProgressView } from "./RehearsalProgressView";
+import { BehavioralDiffView } from "./BehavioralDiffView";
 
 // ---------------------------------------------------------------------------
 // Submission form
@@ -31,6 +34,9 @@ export const SubmissionPage = () => {
     runId: string;
     requirement: string;
   } | null>(null);
+
+  // When the user opens the behavioral diff from the progress view.
+  const [showDiff, setShowDiff] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,8 +73,13 @@ export const SubmissionPage = () => {
 
   const handleNewRehearsal = () => {
     setActiveRun(null);
+    setShowDiff(false);
     setIntent("");
     setError(null);
+  };
+
+  const handleOpenDiff = () => {
+    setShowDiff(true);
   };
 
   const isFormValid =
@@ -80,6 +91,20 @@ export const SubmissionPage = () => {
   // Progress view — shown after a run is started
   // -------------------------------------------------------------------------
 
+  if (activeRun && showDiff) {
+    return (
+      <div>
+        <div className="brand">CHANGE REHEARSAL</div>
+        <p className="subtitle">Don't just review the diff. Rehearse the behavior.</p>
+        <BehavioralDiffView
+          runId={activeRun.runId}
+          requirement={activeRun.requirement}
+          onNewRehearsal={handleNewRehearsal}
+        />
+      </div>
+    );
+  }
+
   if (activeRun) {
     return (
       <div>
@@ -89,6 +114,7 @@ export const SubmissionPage = () => {
           runId={activeRun.runId}
           requirement={activeRun.requirement}
           onNewRehearsal={handleNewRehearsal}
+          onOpenDiff={handleOpenDiff}
         />
       </div>
     );

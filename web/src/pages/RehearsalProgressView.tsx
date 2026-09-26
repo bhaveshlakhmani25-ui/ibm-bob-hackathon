@@ -155,11 +155,13 @@ function TerminalOutcome({
   errorMessage,
   errorCode,
   onNewRehearsal,
+  onViewDiff,
 }: {
   status: RunStatus;
   errorMessage?: string;
   errorCode?: string;
   onNewRehearsal: () => void;
+  onViewDiff: () => void;
 }) {
   if (status === "completed") {
     return (
@@ -170,6 +172,9 @@ function TerminalOutcome({
           behavioral diffs, coverage, and any regressions.
         </p>
         <div className="outcome-actions">
+          <button className="btn-primary" onClick={onViewDiff}>
+            View Behavioral Diff
+          </button>
           <button className="btn-secondary" onClick={onNewRehearsal}>
             New Rehearsal
           </button>
@@ -257,12 +262,15 @@ export interface RehearsalProgressViewProps {
   /** The developer's original requirement text submitted with the change. */
   requirement: string;
   onNewRehearsal: () => void;
+  /** Called when the user wants to open the Behavioral Diff view (B04). */
+  onOpenDiff?: () => void;
 }
 
 export function RehearsalProgressView({
   runId,
   requirement,
   onNewRehearsal,
+  onOpenDiff,
 }: RehearsalProgressViewProps) {
   // Initialise with a queued state so the UI renders immediately on mount
   // before the first poll completes.
@@ -417,6 +425,7 @@ export function RehearsalProgressView({
           errorMessage={statusData.error}
           errorCode={statusData.error_code}
           onNewRehearsal={onNewRehearsal}
+          onViewDiff={onOpenDiff ?? (() => {})}
         />
       )}
 
