@@ -5,7 +5,17 @@ import type {
   RehearsalPhase,
   RehearsalReport,
   JourneyReplayDetail,
+  EvidenceCapsule,
+  RerunRequest,
+  RerunResponse,
 } from "../../../src/shared/contracts";
+
+export interface FixProposal {
+  root_issue: string;
+  suggested_change: string;
+  suggested_regression_test: string;
+  confidence: number;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -652,6 +662,340 @@ export const getJourneyReplay = async (
 };
 
 // ---------------------------------------------------------------------------
+// 4.6  GET /api/rehearsals/:run_id/capsule
+//
+// MOCK: Returns a deterministic EvidenceCapsule for the ShopFlow caching
+// change (same run as getRehearsalReport and getJourneyReplay mocks).
+// Replace the body with a real fetch() call when Reuben's capsule endpoint
+// is available.
+//
+// The mock capsule is assembled from the same source data already present in
+// the report and replay mocks, so the displayed data and the exported JSON
+// are always consistent.
+// ---------------------------------------------------------------------------
+
+export const getEvidenceCapsule = async (
+  runId: string,
+): Promise<EvidenceCapsule> => {
+  await delay(500); // MOCK: simulate network round-trip
+
+  if (runId !== mockRunId || !mockRun) {
+    throw new Error(`Rehearsal not found: ${runId}`);
+  }
+
+  if (mockRun.status.status !== "completed") {
+    throw new Error(`Capsule not ready. Status: ${mockRun.status.status}`);
+  }
+
+  const capsule: EvidenceCapsule = {
+    metadata: {
+      capsule_format_version: "1.0",
+      run_id: runId,
+      generated_at: "2025-01-15T09:04:00Z",
+    },
+    requirement: {
+      text: "Add caching to the Product API to improve response time.",
+      source: "free_text",
+    },
+    change: {
+      base_ref: "main",
+      candidate_ref: "feature/product-cache",
+      diff_summary:
+        "Add Redis caching to Product API response path. Files: productService.ts, cache.ts.",
+      affected_files: ["src/productService.ts", "src/cache.ts"],
+    },
+    rehearsal: {
+      started_at: "2025-01-15T09:01:00Z",
+      completed_at: "2025-01-15T09:03:45Z",
+      baseline_build_status: "success",
+      candidate_build_status: "success",
+    },
+    journey: {
+      journey_id: "jrn-001",
+      journey_name: "ShopFlow — Product Purchase Journey",
+      journey_description:
+        "Full user purchase journey: search → open product → check inventory → add to cart → checkout.",
+      journey_type: "user",
+      journey_source: "requirement",
+    },
+    protected_behavior: {
+      id: "pb-001",
+      description:
+        "Product inventory must reflect the latest write. Stale reads break purchase decisions.",
+      source: "contract_derived",
+      confidence: 1.0,
+    },
+    verdict: {
+      verdict: "regression",
+      final_verdict: "review_required",
+      protected_behavior_confidence: 1.0,
+      confidence_source: "contract_derived",
+      severity: "high",
+      recommended_action:
+        "Invalidate cache on inventory update in productService.ts, or bypass cache for stock reads.",
+    },
+    behavioral_evidence: {
+      baseline_observation: {
+        side: "baseline",
+        raw_output: JSON.stringify({
+          status: 200,
+          body: { id: "product-99", name: "Widget", stock: 1, price: 9.99 },
+        }),
+        normalized_output: {
+          status: 200,
+          body: { id: "product-99", name: "Widget", stock: 1, price: 9.99 },
+        },
+        captured_at: "2025-01-15T09:02:10Z",
+      },
+      candidate_observation: {
+        side: "candidate",
+        raw_output: JSON.stringify({
+          status: 200,
+          body: { id: "product-99", name: "Widget", stock: 3, price: 9.99 },
+        }),
+        normalized_output: {
+          status: 200,
+          body: { id: "product-99", name: "Widget", stock: 3, price: 9.99 },
+        },
+        captured_at: "2025-01-15T09:02:25Z",
+      },
+      changed: true,
+      diff_detail:
+        "body.stock: baseline=1, candidate=3. Candidate returned stale cached stock (3) instead of the updated value (1).",
+      explanation:
+        "Inventory update → stock becomes 1 on baseline. Candidate returns stale cached value stock=3. Cache was not invalidated on write.",
+    },
+    replay_steps: [
+      {
+        step_id: "step-1",
+        sequence: 1,
+        name: "Product Search",
+        action: "GET /products?q=widget",
+        expected_hint: "Returns a list of matching products",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] },
+          },
+          captured_at: "2025-01-15T09:01:05Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { results: [{ id: "product-99", name: "Widget", price: 9.99 }] },
+          },
+          captured_at: "2025-01-15T09:01:05Z",
+        },
+        verdict: "preserved",
+        changed: false,
+        explanation: "Search results are identical on both baseline and candidate.",
+      },
+      {
+        step_id: "step-2",
+        sequence: 2,
+        name: "Open Product",
+        action: "GET /products/product-99",
+        expected_hint: "Returns product detail including current price",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { id: "product-99", name: "Widget", price: 9.99, source: "db" },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { id: "product-99", name: "Widget", price: 9.99, source: "db" },
+          },
+          captured_at: "2025-01-15T09:01:10Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { id: "product-99", name: "Widget", price: 9.99, source: "cache" },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { id: "product-99", name: "Widget", price: 9.99, source: "cache" },
+          },
+          captured_at: "2025-01-15T09:01:10Z",
+        },
+        verdict: "intentional_change",
+        confidence_source: "inferred",
+        confidence_score: 0.95,
+        changed: false,
+        explanation:
+          "Product detail now served from cache instead of DB. Price and name are correct — this is the intended caching change.",
+      },
+      {
+        step_id: "step-3",
+        sequence: 3,
+        name: "Read Inventory",
+        action: "GET /products/product-99 (post-inventory-write)",
+        expected_hint: "Must return stock=1 after inventory was updated to stock=1",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { id: "product-99", stock: 1, price: 9.99 },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { id: "product-99", stock: 1, price: 9.99 },
+          },
+          captured_at: "2025-01-15T09:02:10Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { id: "product-99", stock: 3, price: 9.99 },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { id: "product-99", stock: 3, price: 9.99 },
+          },
+          captured_at: "2025-01-15T09:02:25Z",
+        },
+        verdict: "regression",
+        confidence_source: "contract_derived",
+        confidence_score: 1.0,
+        changed: true,
+        explanation:
+          "Inventory update → stock becomes 1 on baseline. Candidate returns stale cached value stock=3. Cache was not invalidated on write.",
+      },
+      {
+        step_id: "step-4",
+        sequence: 4,
+        name: "Add Item to Cart",
+        action: "PUT /cart/cart-42/product-99",
+        expected_hint: "Cart reflects newly added item",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] },
+          },
+          captured_at: "2025-01-15T09:02:40Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { cart_id: "cart-42", items: [{ product_id: "product-99", qty: 1 }] },
+          },
+          captured_at: "2025-01-15T09:02:40Z",
+        },
+        verdict: "preserved",
+        changed: false,
+        explanation:
+          "Cart add operation is unaffected by caching. Identical on both sides.",
+      },
+      {
+        step_id: "step-5",
+        sequence: 5,
+        name: "Checkout",
+        action: "POST /checkout",
+        expected_hint: "Order confirmed with correct total",
+        baseline_result: {
+          side: "baseline",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { order_id: "ord-123", total: 9.99, status: "confirmed" },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { order_id: "ord-123", total: 9.99, status: "confirmed" },
+          },
+          captured_at: "2025-01-15T09:03:00Z",
+        },
+        candidate_result: {
+          side: "candidate",
+          raw_output: JSON.stringify({
+            status: 200,
+            body: { order_id: "ord-123", total: 9.99, status: "confirmed" },
+          }),
+          normalized_output: {
+            status: 200,
+            body: { order_id: "ord-123", total: 9.99, status: "confirmed" },
+          },
+          captured_at: "2025-01-15T09:03:00Z",
+        },
+        verdict: "preserved",
+        changed: false,
+        explanation: "Checkout total and status are identical on both sides.",
+      },
+    ],
+    reproduction: {
+      steps: [
+        "1. Update inventory for product-99 to stock=1",
+        "2. GET /products/product-99",
+        "3. Observe candidate returns stale stock=3 instead of 1",
+        "4. Baseline correctly returns stock=1",
+        "5. Divergence: cache layer serves stale value — cache not invalidated on inventory write",
+      ],
+      scenario_id: "scn-001",
+    },
+  };
+
+  return capsule;
+};
+
+// ---------------------------------------------------------------------------
+// 4.7 Developer Actions (B07)
+// ---------------------------------------------------------------------------
+
+export const getFixProposal = async (
+  _runId: string,
+  _journeyId: string
+): Promise<FixProposal> => {
+  await delay(800);
+
+  // MOCK: Deterministic proposal for the ShopFlow caching demo
+  return {
+    root_issue: "Cache was not invalidated after inventory update.",
+    suggested_change: "Invalidate the product cache when inventory is updated.",
+    suggested_regression_test:
+      "Update inventory and verify the next inventory read reflects the latest stock.",
+    confidence: 0.92,
+  };
+};
+
+export const rerunRehearsal = async (
+  runId: string,
+  req: RerunRequest
+): Promise<RerunResponse> => {
+  await delay(600);
+
+  const new_run_id = `CR-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+
+  return {
+    new_run_id,
+    parent_run_id: runId,
+    status: "started",
+    scoped_journey_ids: req.scope === "affected_only" ? ["j-2"] : [],
+  };
+};
+
+// ---------------------------------------------------------------------------
 // Exported for tests only
 // ---------------------------------------------------------------------------
 
@@ -668,6 +1012,30 @@ export function _setMockRunState(
 ): void {
   mockRunId = runId;
   mockRun = { status: { ...status }, startedAt: Date.now() };
+}
+
+/**
+ * Override the capsule returned by getEvidenceCapsule for a given runId.
+ * Used in tests to inject specific EvidenceCapsule fixtures.
+ */
+export function _setMockCapsuleState(
+  runId: string,
+  capsule: EvidenceCapsule,
+): void {
+  mockRunId = runId;
+  mockRun = {
+    status: {
+      run_id: runId,
+      status: "completed",
+      phase: "completed",
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      baseline_build_status: "success",
+      candidate_build_status: "success",
+    },
+    startedAt: Date.now(),
+  };
+  (mockRun as MockRun & { _capsuleOverride?: EvidenceCapsule })._capsuleOverride = capsule;
 }
 
 /**

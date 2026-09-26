@@ -28,6 +28,7 @@ import type {
   ConfidenceLevel,
 } from "../../../src/shared/contracts";
 import { getJourneyReplay } from "../services/api";
+import { EvidenceCapsuleView } from "./EvidenceCapsuleView";
 
 // ---------------------------------------------------------------------------
 // Display helpers (same palette as B04)
@@ -280,6 +281,8 @@ export interface JourneyReplayViewProps {
   requirement: string;
   /** Navigate back to the Behavioral Diff without losing context */
   onBack: () => void;
+  /** View the Evidence Capsule for this journey */
+  onViewEvidence?: () => void;
 }
 
 export function JourneyReplayView({
@@ -287,11 +290,13 @@ export function JourneyReplayView({
   journeyId,
   requirement,
   onBack,
+  onViewEvidence,
 }: JourneyReplayViewProps) {
   const [replay, setReplay] = useState<JourneyReplayDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStepIndex, setSelectedStepIndex] = useState(0);
+  const [showCapsule, setShowCapsule] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -326,6 +331,17 @@ export function JourneyReplayView({
     };
   }, [runId, journeyId]);
 
+  // Navigate to Evidence Capsule view
+  if (showCapsule) {
+    return (
+      <EvidenceCapsuleView
+        runId={runId}
+        requirement={requirement}
+        onBack={() => setShowCapsule(false)}
+      />
+    );
+  }
+
   return (
     <div className="jrv-view" data-testid="jrv-view">
       {/* Compact Header */}
@@ -339,14 +355,33 @@ export function JourneyReplayView({
           >
             ← BACK
           </button>
+          <button
+            className="btn-secondary jrv-capsule-btn"
+            onClick={() => setShowCapsule(true)}
+            data-testid="jrv-capsule-btn"
+            aria-label="View Evidence Capsule"
+          >
+            Evidence Capsule
+          </button>
           <div className="jrv-header-meta">
             <span className="jrv-header-label">JOURNEY REPLAY</span>
             <code className="run-id-badge" data-testid="jrv-run-id">{runId}</code>
           </div>
         </div>
-        <div className="jrv-header-requirement" data-testid="jrv-requirement">
-          <span className="jrv-req-label">REQ</span>
-          <span className="jrv-req-text">{requirement}</span>
+        <div className="jrv-header-right" style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <div className="jrv-header-requirement" data-testid="jrv-requirement">
+            <span className="jrv-req-label">REQ</span>
+            <span className="jrv-req-text">{requirement}</span>
+          </div>
+          {onViewEvidence && (
+            <button
+              className="btn-secondary"
+              onClick={onViewEvidence}
+              data-testid="jrv-evidence-btn"
+            >
+              View Evidence
+            </button>
+          )}
         </div>
       </div>
 
