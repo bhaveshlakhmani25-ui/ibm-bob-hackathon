@@ -226,7 +226,7 @@ export const getRehearsalReport = async (
   // is wired in. Do not reference this data outside of this function.
   // ---------------------------------------------------------------------------
   const report: RehearsalReport = {
-    run_id: runId,
+    rehearsal_run_id: runId,
     change: {
       base_ref: "main",
       candidate_ref: "feature/product-cache",
@@ -373,7 +373,7 @@ export const getRehearsalReport = async (
       potentially_affected: 1,
       verdict: "review_required",
     },
-    behavioral_diff: [
+    behavioral_diff_rows: [
       {
         journey_id: "j-1",
         journey_name: "Fetch Product Details",

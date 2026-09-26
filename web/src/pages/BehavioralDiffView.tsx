@@ -316,7 +316,7 @@ function DiffTable({
   report: RehearsalReport;
   onReplayJourney?: (journeyId: string) => void;
 }) {
-  const rows = report.behavioral_diff;
+  const rows = report.behavioral_diff_rows;
 
   if (rows.length === 0) {
     return (

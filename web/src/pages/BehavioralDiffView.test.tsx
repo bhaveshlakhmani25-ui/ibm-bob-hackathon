@@ -50,7 +50,7 @@ const BASE_PROPS = {
 
 function makeReport(overrides: Partial<RehearsalReport> = {}): RehearsalReport {
   const base: RehearsalReport = {
-    run_id: "CR-DIFFTEST",
+    rehearsal_run_id: "CR-DIFFTEST",
     change: {
       base_ref: "main",
       candidate_ref: "feature/product-cache",
@@ -111,7 +111,7 @@ function makeReport(overrides: Partial<RehearsalReport> = {}): RehearsalReport {
       potentially_affected: 1,
       verdict: "review_required",
     },
-    behavioral_diff: [
+    behavioral_diff_rows: [
       {
         journey_id: "j-1",
         journey_name: "Fetch Product Details",
@@ -459,7 +459,7 @@ describe("BehavioralDiffView", () => {
   // -------------------------------------------------------------------------
 
   it("10 — shows empty state message when behavioral_diff is empty", async () => {
-    const report = makeReport({ behavioral_diff: [] });
+    const report = makeReport({ behavioral_diff_rows: [] });
     (api.getRehearsalReport as ReturnType<typeof vi.fn>).mockResolvedValue(report);
     await renderAndAwait();
 
@@ -507,7 +507,7 @@ describe("BehavioralDiffView", () => {
 
   it("12a — handles missing optional fields gracefully (no protected behavior linked)", async () => {
     const report = makeReport({
-      behavioral_diff: [
+      behavioral_diff_rows: [
         {
           journey_id: "j-minimal",
           journey_name: "Minimal Journey",
@@ -541,7 +541,7 @@ describe("BehavioralDiffView", () => {
 
   it("12b — handles regression row with missing evidence gracefully", async () => {
     const report = makeReport({
-      behavioral_diff: [
+      behavioral_diff_rows: [
         {
           journey_id: "j-r",
           journey_name: "Broken Regression",

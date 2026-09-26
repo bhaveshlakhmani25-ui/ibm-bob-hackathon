@@ -102,15 +102,21 @@ export const SubmissionPage = () => {
     return (
       <div>
         <div className="brand">CHANGE REHEARSAL</div>
-        <p className="subtitle">Don’t just review the diff. Rehearse the behavior.</p>
+        <p className="subtitle">Don't just review the diff. Rehearse the behavior.</p>
         
         <div className="progress-container">
           <div className="header">
-            <span className="run-id">ID: {runId}</span>
+            <span className="run-id">ID: <code>{runId}</code></span>
             <span className={`status-badge status-${status.status}`}>
               {status.status}
             </span>
           </div>
+          {intent && (
+            <div className="pv-intent">
+              <span className="pv-intent-label">Requirement</span>
+              <span className="pv-intent-text">{intent}</span>
+            </div>
+          )}
           
           <ul className="phase-list">
             {PHASES.map((phase, idx) => {

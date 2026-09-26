@@ -186,7 +186,7 @@ function makeReplay(overrides: Partial<JourneyReplayDetail> = {}): JourneyReplay
 
 function makeReport(): RehearsalReport {
   return {
-    run_id: "CR-REPLAY01",
+    rehearsal_run_id: "CR-REPLAY01",
     change: {
       base_ref: "main",
       candidate_ref: "feature/product-cache",
@@ -221,7 +221,7 @@ function makeReport(): RehearsalReport {
       potentially_affected: 0,
       verdict: "review_required",
     },
-    behavioral_diff: [
+    behavioral_diff_rows: [
       {
         journey_id: "j-shopflow",
         journey_name: "ShopFlow — Product Purchase Journey",
