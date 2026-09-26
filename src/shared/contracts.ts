@@ -64,8 +64,14 @@ export interface RehearsalStatusResponse {
   completed_at?: string;
   baseline_build_status: BuildStatus;
   candidate_build_status: BuildStatus;
-  /** Only present when status === "failed" */
+  /** Only present when status === "failed" or "build_failed". Human-readable description. */
   error?: string;
+  /**
+   * Machine-readable error code from the integration error contract.
+   * Aligns with error-contract.schema.json `error_code` enum.
+   * Only present when status === "failed" or "build_failed".
+   */
+  error_code?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +154,8 @@ export interface BehavioralDiffRow {
   verdict: Verdict;
   protected_behavior_id?: string;
   protected_behavior_source?: ConfidenceLevel;
+  /** 0.0–1.0 numeric confidence score from the associated ProtectedBehavior. Absent when no protected behavior is linked. */
+  protected_behavior_confidence?: number;
   is_expected_change: boolean;
   scenario_id?: string;
   /** Null when verdict is not_exercised or potentially_affected */
