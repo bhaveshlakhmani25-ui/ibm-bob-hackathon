@@ -31,6 +31,7 @@ import type {
   FinalVerdict,
 } from "../../../src/shared/contracts";
 import { getRehearsalReport } from "../services/api";
+import { JourneyReplayView } from "./JourneyReplayView";
 
 // ---------------------------------------------------------------------------
 // Verdict display helpers
@@ -125,9 +126,11 @@ function ObservationCell({
 function DiffRow({
   row,
   report,
+  onReplayJourney,
 }: {
   row: BehavioralDiffRow;
   report: RehearsalReport;
+  onReplayJourney?: (journeyId: string) => void;
 }) {
   const meta = VERDICT_META[row.verdict];
   const isRegression = row.verdict === "regression";
@@ -173,6 +176,16 @@ function DiffRow({
         )}
         {row.is_expected_change && (
           <span className="expected-tag">expected change</span>
+        )}
+        {onReplayJourney && (
+          <button
+            className="btn-replay-journey"
+            onClick={() => onReplayJourney(row.journey_id)}
+            data-testid={`btn-replay-${row.journey_id}`}
+            aria-label={`Replay journey: ${row.journey_name}`}
+          >
+            Replay Journey
+          </button>
         )}
       </td>
 
@@ -296,7 +309,13 @@ function SummaryScoreboard({ report }: { report: RehearsalReport }) {
   );
 }
 
-function DiffTable({ report }: { report: RehearsalReport }) {
+function DiffTable({
+  report,
+  onReplayJourney,
+}: {
+  report: RehearsalReport;
+  onReplayJourney?: (journeyId: string) => void;
+}) {
   const rows = report.behavioral_diff;
 
   if (rows.length === 0) {
@@ -345,6 +364,7 @@ function DiffTable({ report }: { report: RehearsalReport }) {
               key={`${row.journey_id ?? row.journey_name}-${row.verdict}`}
               row={row}
               report={report}
+              onReplayJourney={onReplayJourney}
             />
           ))}
         </tbody>
@@ -374,6 +394,7 @@ export function BehavioralDiffView({
   const [report, setReport] = useState<RehearsalReport | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -439,11 +460,21 @@ export function BehavioralDiffView({
       )}
 
       {/* Main content */}
-      {!isLoading && report && (
+      {!isLoading && report && !selectedJourneyId && (
         <>
           <SummaryScoreboard report={report} />
-          <DiffTable report={report} />
+          <DiffTable report={report} onReplayJourney={setSelectedJourneyId} />
         </>
+      )}
+
+      {/* Journey Replay View */}
+      {selectedJourneyId && (
+        <JourneyReplayView
+          runId={runId}
+          requirement={requirement}
+          journeyId={selectedJourneyId}
+          onBack={() => setSelectedJourneyId(null)}
+        />
       )}
     </div>
   );
