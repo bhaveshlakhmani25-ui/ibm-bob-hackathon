@@ -6,7 +6,16 @@ import type {
   RehearsalReport,
   JourneyReplayDetail,
   EvidenceCapsule,
+  RerunRequest,
+  RerunResponse,
 } from "../../../src/shared/contracts";
+
+export interface FixProposal {
+  root_issue: string;
+  suggested_change: string;
+  suggested_regression_test: string;
+  confidence: number;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -948,6 +957,42 @@ export const getEvidenceCapsule = async (
   };
 
   return capsule;
+};
+
+// ---------------------------------------------------------------------------
+// 4.7 Developer Actions (B07)
+// ---------------------------------------------------------------------------
+
+export const getFixProposal = async (
+  _runId: string,
+  _journeyId: string
+): Promise<FixProposal> => {
+  await delay(800);
+
+  // MOCK: Deterministic proposal for the ShopFlow caching demo
+  return {
+    root_issue: "Cache was not invalidated after inventory update.",
+    suggested_change: "Invalidate the product cache when inventory is updated.",
+    suggested_regression_test:
+      "Update inventory and verify the next inventory read reflects the latest stock.",
+    confidence: 0.92,
+  };
+};
+
+export const rerunRehearsal = async (
+  runId: string,
+  req: RerunRequest
+): Promise<RerunResponse> => {
+  await delay(600);
+
+  const new_run_id = `CR-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+
+  return {
+    new_run_id,
+    parent_run_id: runId,
+    status: "started",
+    scoped_journey_ids: req.scope === "affected_only" ? ["j-2"] : [],
+  };
 };
 
 // ---------------------------------------------------------------------------
