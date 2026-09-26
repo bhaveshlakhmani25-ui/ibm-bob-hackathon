@@ -46,7 +46,7 @@ const runs = new Map<string, RunEntry>();
 // ShopFlow fixture
 // ---------------------------------------------------------------------------
 
-const SHOPFLOW_REPORT: Omit<RehearsalReport, "run_id"> = {
+const SHOPFLOW_REPORT: Omit<RehearsalReport, "rehearsal_run_id"> = {
   change: {
     base_ref: "main",
     candidate_ref: "feature/product-cache",
@@ -165,7 +165,7 @@ const SHOPFLOW_REPORT: Omit<RehearsalReport, "run_id"> = {
       related_code_refs: ["src/services/PricingService.ts"],
     },
   ],
-  behavioral_diff: [
+  behavioral_diff_rows: [
     {
       journey_id: "j1",
       journey_name: "Product browsing",
@@ -246,6 +246,10 @@ const SHOPFLOW_REPORT: Omit<RehearsalReport, "run_id"> = {
     not_exercised: 1,
     potentially_affected: 0,
     verdict: "review_required",
+  },
+  capsule_ref: {
+    json_path: "rehearsal-report.json",
+    markdown_path: "rehearsal-report.md",
   },
   generated_at: new Date().toISOString(),
 };
@@ -357,7 +361,7 @@ const server = http.createServer(async (req, res) => {
     if (!runs.has(run_id)) {
       return respond(res, 404, { error: "Run not found" });
     }
-    const report: RehearsalReport = { run_id, ...SHOPFLOW_REPORT };
+    const report: RehearsalReport = { rehearsal_run_id: run_id, ...SHOPFLOW_REPORT };
     return respond(res, 200, report);
   }
 

@@ -149,11 +149,11 @@ describe("GET /api/rehearsals/:run_id/report", () => {
 
     const report: RehearsalReport = await fetchReport(run_id, baseUrl);
 
-    expect(report.run_id).toBe(run_id);
+    expect(report.rehearsal_run_id).toBe(run_id);
     expect(report.journeys).toHaveLength(4);
     expect(report.protected_behaviors).toHaveLength(2);
     expect(report.regressions).toHaveLength(1);
-    expect(report.behavioral_diff).toHaveLength(4);
+    expect(report.behavioral_diff_rows).toHaveLength(4);
     expect(report.summary.regressions).toBe(1);
     expect(report.summary.preserved).toBe(2);
     expect(report.summary.not_exercised).toBe(1);
@@ -166,7 +166,7 @@ describe("GET /api/rehearsals/:run_id/report", () => {
     );
     const report = await fetchReport(run_id, baseUrl);
 
-    const regressionRow = report.behavioral_diff.find((r) => r.verdict === "regression");
+    const regressionRow = report.behavioral_diff_rows.find((r) => r.verdict === "regression");
     expect(regressionRow).toBeDefined();
     expect(regressionRow?.journey_name).toBe("Product → Inventory");
   });

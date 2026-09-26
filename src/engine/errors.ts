@@ -29,6 +29,8 @@ export type EngineErrorCode =
   | 'FIXTURE_NOT_FOUND'
   // --- Scenario planning ---
   | 'SCENARIO_NOT_DETERMINISTIC'
+  | 'SCENARIO_INVALID'
+  | 'SCENARIO_DESERIALIZATION_FAILED'
   // --- Execution ---
   | 'SERVICE_START_FAILED'
   | 'SERVICE_HEALTH_CHECK_TIMEOUT'

@@ -198,15 +198,19 @@ export interface ReportSummary {
 }
 
 export interface RehearsalReport {
-  run_id: string;
+  rehearsal_run_id: string;
   change: ChangeSummary;
   requirement: RequirementSummary;
   intent: IntentSummary;
   journeys: Journey[];
   protected_behaviors: ProtectedBehavior[];
-  behavioral_diff: BehavioralDiffRow[];
+  behavioral_diff_rows: BehavioralDiffRow[];
   regressions: Regression[];
   summary: ReportSummary;
+  capsule_ref?: {
+    json_path: string;
+    markdown_path: string;
+  };
   generated_at: string;
 }
 

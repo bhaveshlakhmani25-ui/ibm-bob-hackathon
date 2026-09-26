@@ -174,7 +174,7 @@ export async function runCommand(opts: RunOptions): Promise<number> {
     if (opts.out === "json") {
       console.log(JSON.stringify(report, null, 2));
     } else {
-      renderBehavioralDiffTable(report.behavioral_diff, report.summary);
+      renderBehavioralDiffTable(report.behavioral_diff_rows, report.summary);
     }
 
     return report.summary.regressions > 0 ? EXIT.REGRESSIONS : EXIT.OK;
