@@ -228,3 +228,808 @@ button.primary:disabled {
   font-weight: bold;
   letter-spacing: 0.5px;
 }
+
+/* ============================================================
+   B03 — Rehearsal Progress View styles
+   ============================================================ */
+
+/* Layout */
+.progress-view {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Header row */
+.pv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pv-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.run-id-badge {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background-color: var(--border-subtle);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+/* Status badges */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+.badge-running {
+  background-color: rgba(88, 166, 255, 0.12);
+  color: #58A6FF;
+}
+.badge-queued {
+  background-color: rgba(139, 148, 158, 0.15);
+  color: var(--text-secondary);
+}
+.badge-completed {
+  background-color: rgba(63, 185, 80, 0.12);
+  color: var(--success-text);
+}
+.badge-failed {
+  background-color: rgba(248, 81, 73, 0.12);
+  color: var(--danger-text);
+}
+
+/* Build status pills */
+.build-pills {
+  display: flex;
+  gap: 0.5rem;
+}
+.pill {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+}
+.pill-pending {
+  background-color: rgba(139, 148, 158, 0.15);
+  color: var(--text-secondary);
+}
+.pill-success {
+  background-color: rgba(63, 185, 80, 0.12);
+  color: var(--success-text);
+}
+.pill-failed {
+  background-color: rgba(248, 81, 73, 0.12);
+  color: var(--danger-text);
+}
+
+/* Intent / Requirement display */
+.pv-intent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem;
+  background-color: rgba(88, 166, 255, 0.04);
+  border-left: 3px solid #58A6FF;
+  border-radius: 0 4px 4px 0;
+}
+.pv-intent-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+}
+.pv-intent-text {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Phase list */
+.phase-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.phase-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.phase-row.phase-active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.phase-row.phase-done {
+  color: var(--success-text);
+}
+.phase-row.phase-failed {
+  color: var(--danger-text);
+}
+
+.phase-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+.icon-done { color: var(--success-text); }
+.icon-failed { color: var(--danger-text); font-weight: 700; }
+.icon-pending { color: var(--border-subtle); }
+
+.phase-label {
+  flex: 1;
+}
+
+/* Coverage notice */
+.coverage-notice {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0 0 1rem;
+  font-style: italic;
+}
+
+/* Poll error banner */
+.poll-error-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background-color: rgba(248, 81, 73, 0.08);
+  border: 1px solid var(--danger-text);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--danger-text);
+  margin-bottom: 1rem;
+}
+.poll-error-banner strong {
+  font-weight: 700;
+}
+.poll-error-hint {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.8rem;
+}
+
+/* Terminal outcome panels */
+.outcome-panel {
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+.outcome-success {
+  background-color: rgba(63, 185, 80, 0.07);
+  border: 1px solid rgba(63, 185, 80, 0.35);
+}
+.outcome-failure {
+  background-color: rgba(248, 81, 73, 0.07);
+  border: 1px solid rgba(248, 81, 73, 0.35);
+}
+.outcome-config-error {
+  background-color: rgba(210, 153, 34, 0.07);
+  border: 1px solid rgba(210, 153, 34, 0.4);
+}
+.outcome-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+.outcome-success .outcome-title { color: var(--success-text); }
+.outcome-failure .outcome-title { color: var(--danger-text); }
+.outcome-config-error .outcome-title { color: #D29922; }
+
+.outcome-error-detail {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  background-color: rgba(0,0,0,0.25);
+  border-radius: 4px;
+  padding: 0.6rem 0.75rem;
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-primary);
+}
+.outcome-body {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0.4rem 0 0.75rem;
+  line-height: 1.5;
+}
+.outcome-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Secondary action button */
+.btn-secondary {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-secondary:hover {
+  border-color: var(--border-focus);
+  color: #58A6FF;
+}
+
+/* Loading state */
+.pv-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 0.5rem 0;
+}
+
+/* ============================================================
+   B04 — Behavioral Diff View styles
+   ============================================================ */
+
+.diff-view {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.diff-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1rem;
+}
+
+.diff-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.diff-summary {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.diff-summary h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.summary-stats {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.summary-stats li {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.summary-stats strong {
+  color: var(--text-primary);
+}
+
+.diff-rows h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.diff-row-card {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.verdict-preserved { border-left-color: var(--success-text); }
+.verdict-intentional-change { border-left-color: #58A6FF; }
+.verdict-regression { border-left-color: var(--danger-text); }
+.verdict-potentially-affected { border-left-color: #D29922; }
+.verdict-not-exercised { border-left-color: var(--border-subtle); }
+
+.diff-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.diff-row-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.diff-row-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-item {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.detail-item strong {
+  color: var(--text-primary);
+}
+
+.detail-split {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.split-side {
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.split-side.baseline {
+  border-top: 2px solid var(--success-text);
+}
+
+.split-side.candidate {
+  border-top: 2px solid var(--danger-text);
+}
+
+.split-side code {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.diff-view.loading, .diff-view.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+}
+
+/* ============================================================
+   B04 — Behavioral Diff View styles
+   ============================================================ */
+
+/* Primary action button (distinct from btn-secondary) */
+.btn-primary-action {
+  background-color: var(--accent-primary);
+  color: #FFFFFF;
+  border: 1px solid rgba(240, 246, 252, 0.1);
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.btn-primary-action:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Behavioral Diff view wrapper */
+.bdiff-view {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Header */
+.bdiff-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.bdiff-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.bdiff-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Loading state */
+.bdiff-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 0.5rem 0;
+}
+
+/* Scoreboard */
+.diff-scoreboard {
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-main);
+}
+.diff-scoreboard.final-ready {
+  border-color: rgba(63, 185, 80, 0.35);
+  background-color: rgba(63, 185, 80, 0.04);
+}
+.diff-scoreboard.final-review {
+  border-color: rgba(210, 153, 34, 0.4);
+  background-color: rgba(210, 153, 34, 0.04);
+}
+.diff-scoreboard.final-failed {
+  border-color: rgba(248, 81, 73, 0.35);
+  background-color: rgba(248, 81, 73, 0.04);
+}
+
+.scoreboard-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.scoreboard-verdict-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+}
+.scoreboard-verdict-value {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.scoreboard-verdict-value.final-ready { color: var(--success-text); }
+.scoreboard-verdict-value.final-review { color: #D29922; }
+.scoreboard-verdict-value.final-failed { color: var(--danger-text); }
+
+.scoreboard-counts {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  background-color: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-subtle);
+}
+.score-num {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.score-lbl {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.15rem;
+}
+
+/* Score item colors */
+.score-preserved .score-num { color: var(--success-text); }
+.score-intentional .score-num { color: #58A6FF; }
+.score-regression .score-num { color: var(--text-secondary); }
+.score-regression-nonzero .score-num { color: var(--danger-text); }
+.score-regression-nonzero {
+  border-color: rgba(248, 81, 73, 0.4);
+  background-color: rgba(248, 81, 73, 0.07);
+}
+.score-potential .score-num { color: #D29922; }
+.score-not-exercised .score-num { color: var(--text-secondary); }
+
+/* Empty state */
+.diff-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-secondary);
+}
+.diff-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+.diff-empty-body {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Diff table */
+.diff-table-wrapper {
+  overflow-x: auto;
+  margin-top: 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  table-layout: fixed;
+}
+
+/* Table headers */
+.diff-th {
+  background-color: var(--bg-main);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+.diff-th-behavior  { width: 22%; }
+.diff-th-verdict   { width: 14%; }
+.diff-th-confidence { width: 13%; }
+.diff-th-observations { width: 29%; }
+.diff-th-explanation { width: 22%; }
+
+/* Diff rows */
+.diff-row {
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+}
+.diff-row:last-child { border-bottom: none; }
+.diff-row:hover { background-color: rgba(255,255,255,0.02); }
+
+/* Regression rows are visually prominent */
+.diff-row-regression-highlight {
+  background-color: rgba(248, 81, 73, 0.05);
+  border-left: 3px solid var(--danger-text);
+}
+.diff-row-regression-highlight:hover {
+  background-color: rgba(248, 81, 73, 0.08);
+}
+
+.diff-cell {
+  padding: 0.7rem 0.75rem;
+  vertical-align: top;
+}
+
+/* Behavior cell */
+.behavior-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+  line-height: 1.4;
+}
+.protected-behavior-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 0.2rem;
+}
+.expected-tag {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+  background-color: rgba(88, 166, 255, 0.12);
+  color: #58A6FF;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Verdict badges */
+.diff-verdict-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.verdict-preserved {
+  background-color: rgba(63, 185, 80, 0.12);
+  color: var(--success-text);
+}
+.verdict-intentional {
+  background-color: rgba(88, 166, 255, 0.12);
+  color: #58A6FF;
+}
+.verdict-regression {
+  background-color: rgba(248, 81, 73, 0.12);
+  color: var(--danger-text);
+  font-weight: 800;
+}
+.verdict-potential {
+  background-color: rgba(210, 153, 34, 0.12);
+  color: #D29922;
+}
+.verdict-not-exercised {
+  background-color: rgba(139, 148, 158, 0.12);
+  color: var(--text-secondary);
+}
+
+/* Confidence pills */
+.conf-pill {
+  display: inline-block;
+  font-size: 0.73rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.conf-confirmed {
+  background-color: rgba(63, 185, 80, 0.12);
+  color: var(--success-text);
+}
+.conf-test {
+  background-color: rgba(88, 166, 255, 0.12);
+  color: #58A6FF;
+}
+.conf-contract {
+  background-color: rgba(210, 153, 34, 0.12);
+  color: #D29922;
+}
+.conf-inferred {
+  background-color: rgba(139, 148, 158, 0.12);
+  color: var(--text-secondary);
+}
+.conf-score {
+  font-weight: 700;
+  margin-left: 0.2rem;
+}
+.conf-none {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Observation cells */
+.obs-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.obs-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.obs-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+.obs-value {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  background-color: rgba(0,0,0,0.2);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-primary);
+  max-height: 120px;
+  overflow-y: auto;
+}
+.obs-none {
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  padding: 0;
+}
+
+/* Explanation cell */
+.explanation-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.explanation-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.severity-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+}
+.sev-critical {
+  background-color: rgba(248, 81, 73, 0.2);
+  color: var(--danger-text);
+}
+.sev-high {
+  background-color: rgba(248, 81, 73, 0.12);
+  color: var(--danger-text);
+}
+.sev-medium {
+  background-color: rgba(210, 153, 34, 0.12);
+  color: #D29922;
+}
+.sev-low {
+  background-color: rgba(139, 148, 158, 0.12);
+  color: var(--text-secondary);
+}
+.regression-action {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* outcome-error-code was missing */
+.outcome-error-code {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0;
+}

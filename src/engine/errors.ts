@@ -29,6 +29,8 @@ export type EngineErrorCode =
   | 'FIXTURE_NOT_FOUND'
   // --- Scenario planning ---
   | 'SCENARIO_NOT_DETERMINISTIC'
+  | 'SCENARIO_INVALID'
+  | 'SCENARIO_DESERIALIZATION_FAILED'
   // --- Execution ---
   | 'SERVICE_START_FAILED'
   | 'SERVICE_HEALTH_CHECK_TIMEOUT'
@@ -43,7 +45,9 @@ export type EngineErrorCode =
   | 'BEHAVIOR_DUPLICATE_ID'
   | 'BEHAVIOR_INVALID'
   | 'BEHAVIOR_UNKNOWN_REFERENCE'
-  | 'BEHAVIOR_DESERIALIZATION_FAILED';
+  | 'BEHAVIOR_DESERIALIZATION_FAILED'
+  // --- Repair / Re-run (R08) ---
+  | 'REPAIR_DESERIALIZATION_FAILED';
 
 export class EngineError extends Error {
   public readonly name = 'EngineError';

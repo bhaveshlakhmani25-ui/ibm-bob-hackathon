@@ -301,7 +301,7 @@ const validReport = {
     {
       journey_id: "jrn-001",
       journey_name: "inventory-visibility-after-update",
-      verdict: "changed",
+      verdict: "regression",
       confidence_source: "test_derived",
       is_regression: true,
       regression_id: "reg-001",
@@ -310,7 +310,7 @@ const validReport = {
     {
       journey_id: "jrn-002",
       journey_name: "product-browsing",
-      verdict: "unchanged",
+      verdict: "preserved",
       confidence_source: "confirmed",
       is_regression: false
     }
@@ -335,6 +335,23 @@ rejectsInvalid(
   validate.report,
   { ...validReport, exit_code: 5 },  // 5 not in [0,1,2,3]
   "Report with exit_code=5 is rejected"
+);
+
+rejectsInvalid(
+  validate.report,
+  {
+    ...validReport,
+    behavioral_diff_rows: [
+      {
+        journey_id: "jrn-001",
+        journey_name: "inventory-visibility-after-update",
+        verdict: "changed",  // old Tier-1 vocabulary — must be rejected
+        confidence_source: "test_derived",
+        is_regression: true
+      }
+    ]
+  },
+  "Report with verdict='changed' (Tier-1 engine vocabulary) is rejected in report contract (F-01)"
 );
 
 rejectsInvalid(

@@ -1,0 +1,233 @@
+/**
+ * Change Rehearsal — R06 Behavioral Comparator Domain Model
+ *
+ * Defines the typed output of the BehavioralComparator.
+ * These types carry enough information for R07 to build an evidence-backed report.
+ *
+ * Design constraints:
+ *   - No randomness — all IDs are deterministic (content-derived via SHA-256)
+ *   - No LLM involvement — all verdicts are derived from structural comparison
+ *   - No source-code comparison — compares normalized runtime observations only
+ *   - Preserves provenance and confidence verbatim from R03/R04 inputs
+ *   - Inferred confidence is NEVER upgraded silently
+ *
+ * Verdict semantics:
+ *   PRESERVED           — baseline and candidate normalized observations are equivalent
+ *   INTENTIONAL_CHANGE  — difference is explicitly expected per the scenario plan
+ *   REGRESSION          — difference violates a protected behavior with
+ *                         confirmed/test_derived/contract_derived evidence
+ *   POTENTIAL_DIFFERENCE — difference was detected but cannot be confidently classified
+ *   INCONCLUSIVE        — execution evidence is insufficient to classify
+ *                         (infrastructure failure, blocked, timeout)
+ *
+ * Owner: Reuben (engine)
+ * Phase: R06
+ */
+
+import type { ConfidenceLevel, BehaviorProvenance } from '../behavior/model.js';
+import type { ExecutionStatus } from '../execution/model.js';
+
+// Re-export for consumers that stay within the comparison domain.
+export type { ConfidenceLevel, BehaviorProvenance, ExecutionStatus };
+
+// ---------------------------------------------------------------------------
+// Comparison Verdict
+// ---------------------------------------------------------------------------
+
+/**
+ * The five possible verdicts for a behavioral comparison.
+ *
+ * These use UPPER_SNAKE_CASE to distinguish them from the existing lower-case
+ * Verdict values in types.ts (unchanged, changed, regression, …) which are
+ * used by the legacy comparator.
+ *
+ * R06 produces ComparisonVerdict. R07 consumes it.
+ */
+export type ComparisonVerdict =
+  | 'PRESERVED'            // observations are equivalent
+  | 'INTENTIONAL_CHANGE'   // difference is explicitly expected
+  | 'REGRESSION'           // protected behavior violated with sufficient evidence
+  | 'POTENTIAL_DIFFERENCE' // difference detected; classification uncertain
+  | 'INCONCLUSIVE';        // insufficient execution evidence (infra failure)
+
+// ---------------------------------------------------------------------------
+// Observation Difference
+// ---------------------------------------------------------------------------
+
+/**
+ * A single field-level difference within a matched observation pair.
+ *
+ * Uses JSON-path-like field notation (e.g. "body.stock", "db.inventory.stock").
+ * Both baseline and candidate values are preserved for traceability.
+ */
+export interface ObservationFieldDiff {
+  /** JSON-path-like field description */
+  field: string;
+  /** The normalized value from baseline (null if missing) */
+  baselineValue: unknown;
+  /** The normalized value from candidate (null if missing) */
+  candidateValue: unknown;
+}
+
+// ---------------------------------------------------------------------------
+// Step Comparison Result
+// ---------------------------------------------------------------------------
+
+/**
+ * The comparison result for a single matched step pair.
+ *
+ * A step pair is formed by matching baseline and candidate steps by stepId.
+ * When a step is present only on one side, the other side's fields are null.
+ */
+export interface StepComparisonResult {
+  /** The step ID (from the ScenarioPlan step definition) */
+  stepId: string;
+  /** 1-based sequence of the step in the scenario */
+  sequence: number;
+  /** Execution status on the baseline side */
+  baselineStatus: ExecutionStatus | null;
+  /** Execution status on the candidate side */
+  candidateStatus: ExecutionStatus | null;
+  /** Field-level diffs for this step's observations */
+  fieldDiffs: ObservationFieldDiff[];
+  /**
+   * True when the baseline step is missing (step newly added in candidate).
+   * Observations are still captured when present.
+   */
+  baselineMissing: boolean;
+  /**
+   * True when the candidate step is missing (step removed compared to baseline).
+   */
+  candidateMissing: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Behavioral Difference Record
+// ---------------------------------------------------------------------------
+
+/**
+ * The primary R06 output — one record per compared scenario.
+ *
+ * Contains enough information for R07 to build an evidence-backed report:
+ *   - Stable deterministic ID (no randomUUID)
+ *   - Full traceability (scenarioId, journeyId, protectedBehaviorId)
+ *   - Verdict with reasoning
+ *   - All step-level diffs
+ *   - Preserved provenance and confidence from the source journey/behavior
+ *   - Execution failure metadata
+ *
+ * IDs are generated by deterministicId() from the behavior module.
+ * The same inputs ALWAYS produce the same ID.
+ */
+export interface BehavioralDifferenceRecord {
+  /**
+   * Stable, deterministic identifier for this difference record.
+   * Format: "diff-<hex>" derived from (scenarioId + journeyId + verdict).
+   */
+  differenceId: string;
+
+  /** ID of the ScenarioPlan that was compared */
+  scenarioId: string;
+
+  /** ID of the source journey (from ScenarioTraceability.sourceJourneyId) */
+  journeyId: string;
+
+  /**
+   * ID of the primary protected behavior exercised by this scenario.
+   * Undefined when the scenario has no directly associated protected behavior.
+   */
+  protectedBehaviorId?: string;
+
+  /** The behavioral verdict for this scenario comparison */
+  verdict: ComparisonVerdict;
+
+  /**
+   * One-sentence prose summary suitable for a report.
+   * Describes the verdict in plain language.
+   */
+  summary: string;
+
+  /**
+   * Detailed reasoning for the verdict.
+   * Includes field-level evidence and the rules applied.
+   */
+  detail: string;
+
+  /** Step-level comparison results (one per matched step pair) */
+  stepResults: StepComparisonResult[];
+
+  /**
+   * Confidence level of the comparison result.
+   * Carried over from the source protected behavior or scenario.
+   * NEVER upgraded from 'inferred' to a higher level.
+   */
+  confidence: ConfidenceLevel;
+
+  /**
+   * Provenance from the source scenario/behavior.
+   * Preserved verbatim — never upgraded.
+   */
+  provenance: BehaviorProvenance;
+
+  /**
+   * Overall execution status of the baseline side.
+   * Used to determine whether execution evidence is sufficient for comparison.
+   */
+  baselineExecutionStatus: ExecutionStatus;
+
+  /**
+   * Overall execution status of the candidate side.
+   */
+  candidateExecutionStatus: ExecutionStatus;
+
+  /**
+   * ISO 8601 timestamp when this comparison was performed.
+   * Stable: derived from input metadata, not from Date.now() at comparison time.
+   */
+  comparedAt: string;
+
+  /**
+   * Comparison engine version — used for future format migration.
+   */
+  readonly comparatorVersion: '1.0';
+}
+
+// ---------------------------------------------------------------------------
+// Comparison Input
+// ---------------------------------------------------------------------------
+
+/**
+ * The full set of inputs consumed by the BehavioralComparator for one scenario.
+ *
+ * This is the interface the orchestrator / pipeline uses to call R06.
+ */
+export interface ComparisonInput {
+  /** Paired execution results from R05 */
+  pairedResult: import('../execution/model.js').PairedExecutionResult;
+  /** The scenario plan that was executed (from R04) */
+  scenarioPlan: import('../scenario/model.js').ScenarioPlan;
+  /**
+   * Protected behaviors associated with this scenario.
+   * Matched by ScenarioPlan.traceability.sourceBehaviorIds.
+   * May be empty when the scenario has no directly linked behavior.
+   */
+  protectedBehaviors: import('../behavior/model.js').BehaviorProtectedBehavior[];
+}
+
+// ---------------------------------------------------------------------------
+// Comparison Result Set
+// ---------------------------------------------------------------------------
+
+/**
+ * The complete output of running the comparator over multiple scenarios.
+ *
+ * Sorted by differenceId ascending for deterministic output ordering.
+ */
+export interface ComparisonResultSet {
+  /** All difference records, sorted by differenceId ascending */
+  differences: BehavioralDifferenceRecord[];
+  /** Summary counts by verdict */
+  counts: Record<ComparisonVerdict, number>;
+  /** Comparator version used to produce this result set */
+  comparatorVersion: '1.0';
+}

@@ -149,11 +149,11 @@ describe("GET /api/rehearsals/:run_id/report", () => {
 
     const report: RehearsalReport = await fetchReport(run_id, baseUrl);
 
-    expect(report.run_id).toBe(run_id);
+    expect(report.rehearsal_run_id).toBe(run_id);
     expect(report.journeys).toHaveLength(4);
     expect(report.protected_behaviors).toHaveLength(2);
     expect(report.regressions).toHaveLength(1);
-    expect(report.behavioral_diff).toHaveLength(4);
+    expect(report.behavioral_diff_rows).toHaveLength(4);
     expect(report.summary.regressions).toBe(1);
     expect(report.summary.preserved).toBe(2);
     expect(report.summary.not_exercised).toBe(1);
@@ -166,7 +166,7 @@ describe("GET /api/rehearsals/:run_id/report", () => {
     );
     const report = await fetchReport(run_id, baseUrl);
 
-    const regressionRow = report.behavioral_diff.find((r) => r.verdict === "regression");
+    const regressionRow = report.behavioral_diff_rows.find((r) => r.verdict === "regression");
     expect(regressionRow).toBeDefined();
     expect(regressionRow?.journey_name).toBe("Product → Inventory");
   });
@@ -186,6 +186,43 @@ describe("GET /api/rehearsals/:run_id/report", () => {
 
   it("returns 404 for an unknown run_id", async () => {
     await expect(fetchReport("ghost-run-id", baseUrl)).rejects.toThrow(ApiError);
+  });
+
+  // F-02 regression: protected_behavior_confidence must survive the complete data path
+  it("F-02 — regression row carries protected_behavior_confidence (numeric, 0–1)", async () => {
+    const { run_id } = await startRehearsal(
+      { repo_path: "/repos/shopflow", base_ref: "main", candidate_ref: "feature/product-cache" },
+      baseUrl,
+    );
+    const report = await fetchReport(run_id, baseUrl);
+
+    const regressionRow = report.behavioral_diff_rows.find((r) => r.verdict === "regression");
+    expect(regressionRow).toBeDefined();
+    expect(typeof regressionRow?.protected_behavior_confidence).toBe("number");
+    expect(regressionRow?.protected_behavior_confidence).toBeGreaterThan(0);
+    expect(regressionRow?.protected_behavior_confidence).toBeLessThanOrEqual(1);
+    // Verify it matches the linked protected_behavior
+    const linkedPb = report.protected_behaviors.find(
+      (pb) => pb.id === regressionRow?.protected_behavior_id,
+    );
+    expect(linkedPb).toBeDefined();
+    expect(regressionRow?.protected_behavior_confidence).toBe(linkedPb?.confidence);
+  });
+
+  // F-02 regression: preserved rows without a linked protected behavior have no confidence
+  it("F-02 — preserved rows without protected_behavior_id have no confidence", async () => {
+    const { run_id } = await startRehearsal(
+      { repo_path: "/repos/shopflow", base_ref: "main", candidate_ref: "feature/product-cache" },
+      baseUrl,
+    );
+    const report = await fetchReport(run_id, baseUrl);
+
+    const preservedRows = report.behavioral_diff_rows.filter(
+      (r) => r.verdict === "preserved" && !r.protected_behavior_id,
+    );
+    for (const row of preservedRows) {
+      expect(row.protected_behavior_confidence).toBeUndefined();
+    }
   });
 });
 
@@ -211,6 +248,32 @@ describe("ApiError", () => {
       expect(err).toBeInstanceOf(ApiError);
       expect((err as ApiError).status).toBe(0);
       expect((err as ApiError).message).toMatch(/Network error/i);
+    }
+  });
+
+  // F-05 regression: error_code must be preserved through the API layer
+  it("F-05 — ApiError preserves error_code from the engine's error envelope", async () => {
+    // The mock server returns error_code: "REHEARSAL_ENGINE_UNAVAILABLE" on 404
+    try {
+      await getRehearsalStatus("non-existent-run-id", baseUrl);
+      expect.fail("Expected ApiError to be thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).status).toBe(404);
+      expect((err as ApiError).error_code).toBe("REHEARSAL_ENGINE_UNAVAILABLE");
+    }
+  });
+
+  it("F-05 — ApiError.error_code is undefined when the response body is not an error envelope", async () => {
+    // Network error has no error_code (not a JSON envelope)
+    try {
+      await startRehearsal(
+        { repo_path: "/x", base_ref: "main", candidate_ref: "feature/x" },
+        "http://localhost:19999",
+      );
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as ApiError).error_code).toBeUndefined();
     }
   });
 });
