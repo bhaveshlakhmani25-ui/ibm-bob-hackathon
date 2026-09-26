@@ -21,6 +21,8 @@ export type EngineErrorCode =
   // --- Change extraction ---
   | 'GIT_DIFF_FAILED'
   | 'GIT_REF_NOT_FOUND'
+  | 'GIT_COMMAND_FAILED'
+  | 'DIFF_PARSE_FAILED'
   // --- Intent compiler ---
   | 'INTENT_COMPILER_FAILED'
   | 'LLM_RESPONSE_INVALID'
