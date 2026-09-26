@@ -463,11 +463,14 @@ export function BehavioralDiffView({
       {!isLoading && report && !selectedJourneyId && (
         <>
           <SummaryScoreboard report={report} />
-          <DiffTable report={report} onReplayJourney={setSelectedJourneyId} />
+          <DiffTable
+            report={report}
+            onReplayJourney={setSelectedJourneyId}
+          />
         </>
       )}
 
-      {/* Journey Replay View */}
+      {/* Journey Replay View — B05 (contains Evidence Capsule button → B06) */}
       {selectedJourneyId && (
         <JourneyReplayView
           runId={runId}
