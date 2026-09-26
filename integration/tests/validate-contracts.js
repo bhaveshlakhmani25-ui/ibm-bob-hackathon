@@ -367,6 +367,58 @@ rejectsInvalid(
 );
 
 // ---------------------------------------------------------------------------
+// 8b. Report contract — CLI verdict vocabulary is accepted
+// ---------------------------------------------------------------------------
+
+section("8b. Report contract — CLI verdict vocabulary accepted");
+
+const validReportCliVerdicts = {
+  ...validReport,
+  behavioral_diff_rows: [
+    {
+      journey_id: "jrn-001",
+      journey_name: "inventory-visibility-after-update",
+      verdict: "regression",
+      confidence_source: "test_derived",
+      is_regression: true,
+      regression_id: "reg-001",
+      evidence_ref: "obs-001"
+    },
+    {
+      journey_id: "jrn-002",
+      journey_name: "product-browsing",
+      verdict: "preserved",
+      confidence_source: "confirmed",
+      is_regression: false
+    },
+    {
+      journey_id: "jrn-003",
+      journey_name: "product-checkout",
+      verdict: "intentional_change",
+      confidence_source: "test_derived",
+      is_regression: false
+    }
+  ]
+};
+
+validatesOk(validate.report, validReportCliVerdicts, "Report with CLI verdicts (regression, preserved, intentional_change) passes schema");
+
+rejectsInvalid(
+  validate.report,
+  {
+    ...validReport,
+    behavioral_diff_rows: [
+      {
+        journey_name: "some-journey",
+        verdict: "UNKNOWN_VERDICT",  // not in any enum
+        confidence_source: "confirmed"
+      }
+    ]
+  },
+  "Report with unrecognised verdict is rejected"
+);
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 

@@ -277,3 +277,58 @@ describe("ApiError", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// E2E smoke: run_id propagation + partial-status terminal handling
+// ---------------------------------------------------------------------------
+
+describe("E2E smoke: run_id propagation and partial-status terminal handling", () => {
+  it("run_id is propagated correctly from POST to status to report", async () => {
+    const { run_id } = await startRehearsal(
+      { repo_path: "/repos/shopflow", base_ref: "main", candidate_ref: "feature/product-cache" },
+      baseUrl,
+    );
+
+    // run_id must be present in status response
+    const status: RehearsalStatusResponse = await getRehearsalStatus(run_id, baseUrl);
+    expect(status.run_id).toBe(run_id);
+
+    // run_id must be present in report
+    const report: RehearsalReport = await fetchReport(run_id, baseUrl);
+    expect(report.run_id).toBe(run_id);
+  });
+
+  it("runDashboard treats 'partial' Reuben status as a terminal state (does not loop)", async () => {
+    // Simulate what happens when Reuben returns status: "partial" by directly
+    // testing the terminal-state logic in runDashboard.
+    // We verify: a status with "partial" resolves to exitCode OK so the report
+    // can be fetched rather than looping forever.
+    //
+    // Approach: create a mini one-shot server that returns "partial" once, then
+    // "completed" to allow clean shutdown.
+    const partialServer = http.createServer((_req, res) => {
+      const body = JSON.stringify({
+        run_id: "partial-run-1",
+        status: "partial",
+        phase: "comparing",
+        started_at: new Date().toISOString(),
+        baseline_build_status: "success",
+        candidate_build_status: "success",
+      });
+      res.writeHead(200, { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) });
+      res.end(body);
+    });
+
+    await new Promise<void>((resolve) => partialServer.listen(0, "127.0.0.1", () => resolve()));
+    const addr = partialServer.address() as AddressInfo;
+    const partialBaseUrl = `http://127.0.0.1:${addr.port}`;
+
+    const { runDashboard } = await import("../../cli/views/RehearsalDashboard.js");
+    const { exitCode, finalStatus } = await runDashboard("partial-run-1", partialBaseUrl);
+
+    await new Promise<void>((resolve) => partialServer.close(() => resolve()));
+
+    expect(exitCode).toBe(0); // EXIT.OK — partial is terminal, report should be fetched
+    expect(finalStatus.status).toBe("partial" as any);
+  });
+});
