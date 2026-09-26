@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://change-rehearsal/schemas/report-contract.schema.json",
+  "title": "ReportContract",
+  "description": "Outbound contract for the rehearsal report emitted by the integration layer to the CLI/CI/report layer. Corresponds to rehearsal-report.json. The integration layer constructs this from the RehearsalResult returned by Reuben's backend.",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "rehearsal_run_id",
+    "change_id",
+    "status",
+    "exit_code",
+    "summary",
+    "behavioral_diff_rows",
+    "capsule_ref",
+    "generated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "rehearsal_run_id": { "type": "string", "minLength": 1 },
+    "change_id": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["completed", "partial", "failed"],
+      "description": "Overall rehearsal status."
+    },
+    "exit_code": {
+      "type": "integer",
+      "enum": [0, 1, 2, 3],
+      "description": "0=no regressions; 1=regressions present; 2=build/execution failure; 3=invalid config/unsupported repo."
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_scenarios", "preserved", "regressions", "not_exercised"],
+      "additionalProperties": false,
+      "properties": {
+        "total_scenarios": { "type": "integer", "minimum": 0 },
+        "preserved": { "type": "integer", "minimum": 0 },
+        "intentional_changes": { "type": "integer", "minimum": 0 },
+        "regressions": { "type": "integer", "minimum": 0 },
+        "not_exercised": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "behavioral_diff_rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["journey_name", "verdict", "confidence_source"],
+        "additionalProperties": false,
+        "properties": {
+          "journey_id": { "type": "string" },
+          "journey_name": { "type": "string", "minLength": 1 },
+          "verdict": {
+            "type": "string",
+            "enum": ["unchanged", "changed", "potentially_affected", "not_exercised"]
+          },
+          "confidence_source": {
+            "type": "string",
+            "enum": ["confirmed", "test_derived", "contract_derived", "inferred"]
+          },
+          "is_regression": { "type": "boolean" },
+          "regression_id": { "type": "string" },
+          "evidence_ref": { "type": "string" }
+        }
+      }
+    },
+    "capsule_ref": {
+      "type": "object",
+      "required": ["json_path", "markdown_path"],
+      "additionalProperties": false,
+      "properties": {
+        "json_path": {
+          "type": "string",
+          "description": "Relative path to rehearsal-report.json produced by the Evidence Capsule."
+        },
+        "markdown_path": {
+          "type": "string",
+          "description": "Relative path to rehearsal-report.md produced by the Evidence Capsule."
+        }
+      }
+    },
+    "pr_comment_posted": {
+      "type": "boolean",
+      "description": "Whether the behavioral diff was posted as a GitHub PR comment."
+    },
+    "generated_at": { "type": "string", "format": "date-time" }
+  }
+}

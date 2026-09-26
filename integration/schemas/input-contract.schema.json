@@ -1,0 +1,177 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://change-rehearsal/schemas/input-contract.schema.json",
+  "title": "InputContract",
+  "description": "Structured payload emitted by Bhavesh's core engine and consumed by Tashvi's integration layer. Aligns with the v2 Change/Journey/ProtectedBehavior/Scenario vocabulary.",
+  "type": "object",
+  "required": ["contract_version", "change", "journeys", "protected_behaviors", "scenarios"],
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "0.1",
+      "description": "Schema/contract version. Must be '0.1' for this revision."
+    },
+    "change": {
+      "$ref": "#/definitions/Change"
+    },
+    "requirement": {
+      "$ref": "#/definitions/Requirement"
+    },
+    "journeys": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Journey" },
+      "description": "One or more journeys affected by the change, as determined by the Intent→Journey Compiler."
+    },
+    "journey_steps": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/JourneyStep" },
+      "description": "Executable steps belonging to the journeys above."
+    },
+    "protected_behaviors": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/ProtectedBehavior" },
+      "description": "Behaviors that must remain correct across the change."
+    },
+    "scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Scenario" },
+      "description": "Deterministic executable scenarios derived from journeys and protected behaviors."
+    }
+  },
+  "definitions": {
+    "Change": {
+      "type": "object",
+      "required": ["id", "base_ref", "candidate_ref", "diff_summary", "created_at"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "base_ref": { "type": "string", "minLength": 1, "description": "Git ref for the pre-change (baseline) side." },
+        "candidate_ref": { "type": "string", "minLength": 1, "description": "Git ref for the post-change (candidate) side." },
+        "pr_number": { "type": "integer", "minimum": 1, "description": "GitHub PR number, when the change originates from a PR." },
+        "diff_summary": {
+          "type": "object",
+          "required": ["changed_files"],
+          "additionalProperties": false,
+          "properties": {
+            "changed_files": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "changed_symbols": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Function/class/symbol names that changed, where available."
+            },
+            "hunks_count": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Requirement": {
+      "type": "object",
+      "required": ["id", "text", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "source": {
+          "type": "string",
+          "enum": ["free_text", "issue_link", "acceptance_criteria"]
+        },
+        "expected_changes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Journey": {
+      "type": "object",
+      "required": ["id", "change_id", "name", "type", "source", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "change_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["user", "system", "api", "data"]
+        },
+        "priority": { "type": "integer", "minimum": 1 },
+        "source": {
+          "type": "string",
+          "enum": ["requirement", "impact", "developer", "inferred"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["confirmed", "test_derived", "contract_derived", "inferred"]
+        }
+      }
+    },
+    "JourneyStep": {
+      "type": "object",
+      "required": ["id", "journey_id", "sequence", "action_type", "input"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "journey_id": { "type": "string", "minLength": 1 },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "action_type": {
+          "type": "string",
+          "enum": ["http", "cli", "function", "db"]
+        },
+        "input": { "type": "object" },
+        "expected_hint": { "type": "string" }
+      }
+    },
+    "ProtectedBehavior": {
+      "type": "object",
+      "required": ["id", "change_id", "description", "source", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "change_id": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "source": {
+          "type": "string",
+          "enum": ["confirmed", "test_derived", "contract_derived", "inferred"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["confirmed", "test_derived", "contract_derived", "inferred"]
+        },
+        "workflow_name": { "type": "string" },
+        "related_code_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Scenario": {
+      "type": "object",
+      "required": ["id", "journey_id", "steps", "deterministic"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "journey_id": { "type": "string", "minLength": 1 },
+        "protected_behavior_id": { "type": "string" },
+        "requirement_id": { "type": "string" },
+        "steps": {
+          "type": "array",
+          "items": { "type": "object" },
+          "minItems": 1
+        },
+        "expected_invariant_hint": { "type": "string" },
+        "deterministic": {
+          "type": "boolean",
+          "const": true,
+          "description": "Must be true for MVP. Non-deterministic scenarios are not accepted."
+        },
+        "seed_data_ref": { "type": "string" }
+      }
+    }
+  }
+}

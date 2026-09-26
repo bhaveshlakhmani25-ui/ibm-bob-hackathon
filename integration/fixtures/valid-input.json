@@ -1,0 +1,129 @@
+{
+  "contract_version": "0.1",
+  "change": {
+    "id": "chg-shopflow-001",
+    "base_ref": "main",
+    "candidate_ref": "feature/product-cache",
+    "pr_number": 42,
+    "diff_summary": {
+      "changed_files": [
+        "src/product/productService.ts",
+        "src/product/cache.ts"
+      ],
+      "changed_symbols": [
+        "ProductService.getProduct",
+        "CacheLayer.get",
+        "CacheLayer.set"
+      ],
+      "hunks_count": 6
+    },
+    "created_at": "2025-01-15T09:00:00Z"
+  },
+  "requirement": {
+    "id": "req-001",
+    "text": "Add caching to the Product API to improve response time.",
+    "source": "free_text",
+    "expected_changes": [
+      "Product API response path gains caching layer",
+      "Reduced latency for repeated product lookups"
+    ]
+  },
+  "journeys": [
+    {
+      "id": "jrn-001",
+      "change_id": "chg-shopflow-001",
+      "name": "inventory-visibility-after-update",
+      "description": "After an inventory update, a product read must reflect the current stock level.",
+      "type": "api",
+      "priority": 1,
+      "source": "impact",
+      "confidence": "test_derived"
+    },
+    {
+      "id": "jrn-002",
+      "change_id": "chg-shopflow-001",
+      "name": "product-browsing",
+      "description": "Standard product browse returns correct price and name.",
+      "type": "user",
+      "priority": 2,
+      "source": "requirement",
+      "confidence": "confirmed"
+    }
+  ],
+  "journey_steps": [
+    {
+      "id": "step-001",
+      "journey_id": "jrn-001",
+      "sequence": 1,
+      "action_type": "http",
+      "input": { "method": "PUT", "path": "/inventory/product-99", "body": { "stock": 3 } },
+      "expected_hint": "200 OK"
+    },
+    {
+      "id": "step-002",
+      "journey_id": "jrn-001",
+      "sequence": 2,
+      "action_type": "http",
+      "input": { "method": "GET", "path": "/products/product-99" },
+      "expected_hint": "stock field equals 3"
+    },
+    {
+      "id": "step-003",
+      "journey_id": "jrn-002",
+      "sequence": 1,
+      "action_type": "http",
+      "input": { "method": "GET", "path": "/products/product-99" },
+      "expected_hint": "200 OK with name and price"
+    }
+  ],
+  "protected_behaviors": [
+    {
+      "id": "pb-001",
+      "change_id": "chg-shopflow-001",
+      "description": "Inventory freshness: product stock displayed after an inventory update must reflect the updated value.",
+      "source": "test_derived",
+      "confidence": "test_derived",
+      "workflow_name": "inventory-visibility-after-update",
+      "related_code_refs": [
+        "src/product/productService.ts",
+        "src/product/cache.ts"
+      ]
+    },
+    {
+      "id": "pb-002",
+      "change_id": "chg-shopflow-001",
+      "description": "Price accuracy: product price returned by the API must match the pricing service value.",
+      "source": "confirmed",
+      "confidence": "confirmed",
+      "workflow_name": "product-browsing",
+      "related_code_refs": [
+        "src/product/productService.ts"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "scn-001",
+      "journey_id": "jrn-001",
+      "protected_behavior_id": "pb-001",
+      "steps": [
+        { "ref": "step-001" },
+        { "ref": "step-002" }
+      ],
+      "expected_invariant_hint": "GET /products/product-99 stock must equal 3 after PUT /inventory/product-99 with stock=3",
+      "deterministic": true,
+      "seed_data_ref": "fixtures/shopflow-seed.json"
+    },
+    {
+      "id": "scn-002",
+      "journey_id": "jrn-002",
+      "protected_behavior_id": "pb-002",
+      "steps": [
+        { "ref": "step-003" }
+      ],
+      "expected_invariant_hint": "GET /products/product-99 returns name and correct price",
+      "deterministic": true,
+      "seed_data_ref": "fixtures/shopflow-seed.json"
+    }
+  ]
+}
