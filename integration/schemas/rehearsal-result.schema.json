@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://change-rehearsal/schemas/rehearsal-result.schema.json",
+  "title": "RehearsalResult",
+  "description": "Structured result returned by Reuben's backend/AI rehearsal engine. Wraps a RehearsalRun with its EvidenceCapsule and the full evidence chain. Aligns with the v2 RehearsalRun/Observation/BehavioralDifference/EvidenceCapsule vocabulary.",
+  "type": "object",
+  "required": ["contract_version", "rehearsal_run", "observations", "behavioral_differences", "evidence_capsule"],
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "rehearsal_run": {
+      "$ref": "#/definitions/RehearsalRun"
+    },
+    "journey_replays": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/JourneyReplay" },
+      "description": "One JourneyReplay per journey executed, pairing baseline and candidate execution status."
+    },
+    "observations": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Observation" },
+      "description": "All captured and normalized outputs from baseline and candidate runs."
+    },
+    "behavioral_differences": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/BehavioralDifference" },
+      "description": "Workflow-level verdicts comparing baseline vs candidate per scenario/journey."
+    },
+    "regressions": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Regression" },
+      "description": "Subset of behavioral differences classified as unexpected protected-behavior violations."
+    },
+    "evidence_capsule": {
+      "$ref": "#/definitions/EvidenceCapsule"
+    }
+  },
+  "definitions": {
+    "RehearsalRun": {
+      "type": "object",
+      "required": ["id", "change_id", "started_at", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "change_id": { "type": "string", "minLength": 1 },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "status": {
+          "type": "string",
+          "enum": ["completed", "failed", "partial"],
+          "description": "'completed' = all scenarios ran; 'partial' = some not exercised; 'failed' = build or fatal error."
+        },
+        "baseline_build_status": {
+          "type": "string",
+          "enum": ["success", "failed", "skipped"]
+        },
+        "candidate_build_status": {
+          "type": "string",
+          "enum": ["success", "failed", "skipped"]
+        }
+      }
+    },
+    "JourneyReplay": {
+      "type": "object",
+      "required": ["id", "rehearsal_run_id", "journey_id", "baseline_status", "candidate_status", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "rehearsal_run_id": { "type": "string", "minLength": 1 },
+        "journey_id": { "type": "string", "minLength": 1 },
+        "baseline_status": {
+          "type": "string",
+          "enum": ["pass", "fail", "error", "skipped"]
+        },
+        "candidate_status": {
+          "type": "string",
+          "enum": ["pass", "fail", "error", "skipped"]
+        },
+        "baseline_observation_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "candidate_observation_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["unchanged", "changed", "potentially_affected", "not_exercised"]
+        }
+      }
+    },
+    "Observation": {
+      "type": "object",
+      "required": ["id", "rehearsal_run_id", "scenario_id", "side", "normalized_output", "captured_at"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "rehearsal_run_id": { "type": "string", "minLength": 1 },
+        "scenario_id": { "type": "string", "minLength": 1 },
+        "side": {
+          "type": "string",
+          "enum": ["baseline", "candidate"]
+        },
+        "raw_output": { "type": "object", "description": "Raw captured output before normalization." },
+        "normalized_output": { "type": "object", "description": "Output after noise normalization (timestamps, random IDs stripped)." },
+        "captured_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "BehavioralDifference": {
+      "type": "object",
+      "required": ["id", "scenario_id", "journey_id", "verdict", "is_expected"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "scenario_id": { "type": "string", "minLength": 1 },
+        "journey_id": { "type": "string", "minLength": 1 },
+        "verdict": {
+          "type": "string",
+          "enum": ["unchanged", "changed", "potentially_affected", "not_exercised"]
+        },
+        "diff_detail": {
+          "oneOf": [
+            { "type": "object" },
+            { "type": "null" }
+          ],
+          "description": "Structured representation of what differed. Null when verdict is 'unchanged' or 'not_exercised'."
+        },
+        "is_expected": {
+          "type": "boolean",
+          "description": "True when the difference is justified by the requirement (intentional change). False = regression candidate."
+        }
+      }
+    },
+    "Regression": {
+      "type": "object",
+      "required": ["id", "behavioral_difference_id", "protected_behavior_id", "severity", "recommended_action"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "behavioral_difference_id": { "type": "string", "minLength": 1 },
+        "protected_behavior_id": { "type": "string", "minLength": 1 },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "recommended_action": { "type": "string", "minLength": 1 }
+      }
+    },
+    "EvidenceCapsule": {
+      "type": "object",
+      "required": [
+        "id",
+        "rehearsal_run_id",
+        "change_summary",
+        "journey_refs",
+        "protected_behavior_refs",
+        "scenario_refs",
+        "behavioral_difference_refs",
+        "recommendation",
+        "generated_at",
+        "formats"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "rehearsal_run_id": { "type": "string", "minLength": 1 },
+        "change_summary": { "type": "string", "minLength": 1 },
+        "requirement_summary": { "type": "string" },
+        "journey_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "protected_behavior_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "scenario_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "behavioral_difference_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reproduction_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recommendation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable merge recommendation, e.g. 'REVIEW REQUIRED — 1 regression detected'."
+        },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["json", "markdown"]
+          },
+          "minItems": 1,
+          "description": "Output formats produced: rehearsal-report.json and/or rehearsal-report.md."
+        }
+      }
+    }
+  }
+}

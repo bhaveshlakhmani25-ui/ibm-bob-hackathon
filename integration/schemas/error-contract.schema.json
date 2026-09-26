@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://change-rehearsal/schemas/error-contract.schema.json",
+  "title": "ErrorContract",
+  "description": "Standard error envelope returned by the integration layer whenever a rehearsal cannot complete normally. Failure modes align with those defined in the v2 Technical Architecture (§17).",
+  "type": "object",
+  "required": ["contract_version", "status", "error_code", "message"],
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["error"],
+      "description": "Always 'error' for this envelope."
+    },
+    "error_code": {
+      "type": "string",
+      "enum": [
+        "BUILD_FAILURE",
+        "SCENARIO_GENERATION_FAILURE",
+        "INFERENCE_ONLY_PROTECTED_BEHAVIOR",
+        "CROSS_SERVICE_ANALYSIS_UNAVAILABLE",
+        "INVALID_INPUT_CONTRACT",
+        "REHEARSAL_ENGINE_UNAVAILABLE"
+      ],
+      "description": "Machine-readable error code. Maps to the failure modes in the v2 architecture (§17) plus integration-layer-specific codes."
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable description of what failed."
+    },
+    "exit_code": {
+      "type": "integer",
+      "enum": [1, 2, 3],
+      "description": "CLI exit code. 1=regressions/check failure; 2=execution/build failure; 3=invalid config."
+    },
+    "rehearsal_run_id": {
+      "type": "string",
+      "description": "Present when the run was started before the failure occurred."
+    },
+    "change_id": {
+      "type": "string",
+      "description": "Present when the change was identified before the failure."
+    },
+    "detail": {
+      "type": "object",
+      "description": "Optional structured detail for machine consumers (e.g., which scenario failed to generate, which service map entry is missing)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
