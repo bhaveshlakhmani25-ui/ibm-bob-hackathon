@@ -475,7 +475,7 @@ async function runTests() {
       {
         journey_id: "jrn-001",
         journey_name: "Product → Inventory",
-        verdict: "changed",
+        verdict: "regression",
         confidence_source: "test_derived",
         is_regression: true,
         regression_id: "reg-001",
