@@ -196,7 +196,7 @@ describe("GET /api/rehearsals/:run_id/report", () => {
     );
     const report = await fetchReport(run_id, baseUrl);
 
-    const regressionRow = report.behavioral_diff.find((r) => r.verdict === "regression");
+    const regressionRow = report.behavioral_diff_rows.find((r) => r.verdict === "regression");
     expect(regressionRow).toBeDefined();
     expect(typeof regressionRow?.protected_behavior_confidence).toBe("number");
     expect(regressionRow?.protected_behavior_confidence).toBeGreaterThan(0);
@@ -217,7 +217,7 @@ describe("GET /api/rehearsals/:run_id/report", () => {
     );
     const report = await fetchReport(run_id, baseUrl);
 
-    const preservedRows = report.behavioral_diff.filter(
+    const preservedRows = report.behavioral_diff_rows.filter(
       (r) => r.verdict === "preserved" && !r.protected_behavior_id,
     );
     for (const row of preservedRows) {
