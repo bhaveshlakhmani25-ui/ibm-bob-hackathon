@@ -11,7 +11,7 @@
  *  7.  Preserved row
  *  8.  Intentional change row
  *  9.  Scoreboard summary counts
- *  10. Empty / no-results state (behavioral_diff = [])
+ *  10. Empty / no-results state (behavioral_diff_rows = [])
  *  11. API failure (getRehearsalReport rejects)
  *  12. Malformed / incomplete result handling (missing optional fields)
  *  13. Run ID and requirement always visible
@@ -111,7 +111,7 @@ function makeReport(overrides: Partial<RehearsalReport> = {}): RehearsalReport {
       potentially_affected: 1,
       verdict: "review_required",
     },
-    behavioral_diff: [
+    behavioral_diff_rows: [
       {
         journey_id: "j-1",
         journey_name: "Fetch Product Details",
@@ -458,8 +458,8 @@ describe("BehavioralDiffView", () => {
   // 10. Empty / no-results state
   // -------------------------------------------------------------------------
 
-  it("10 — shows empty state message when behavioral_diff is empty", async () => {
-    const report = makeReport({ behavioral_diff: [] });
+  it("10 — shows empty state message when behavioral_diff_rows is empty", async () => {
+    const report = makeReport({ behavioral_diff_rows: [] });
     (api.getRehearsalReport as ReturnType<typeof vi.fn>).mockResolvedValue(report);
     await renderAndAwait();
 
@@ -507,7 +507,7 @@ describe("BehavioralDiffView", () => {
 
   it("12a — handles missing optional fields gracefully (no protected behavior linked)", async () => {
     const report = makeReport({
-      behavioral_diff: [
+      behavioral_diff_rows: [
         {
           journey_id: "j-minimal",
           journey_name: "Minimal Journey",
@@ -541,7 +541,7 @@ describe("BehavioralDiffView", () => {
 
   it("12b — handles regression row with missing evidence gracefully", async () => {
     const report = makeReport({
-      behavioral_diff: [
+      behavioral_diff_rows: [
         {
           journey_id: "j-r",
           journey_name: "Broken Regression",
