@@ -14,6 +14,10 @@ vi.mock("../services/api", () => ({
   getRehearsalStatus: vi.fn(),
 }));
 
+vi.mock("../components/LiquidEther", () => ({
+  default: () => <div data-testid="mock-liquid-ether" />,
+}));
+
 describe("SubmissionPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -26,7 +30,7 @@ describe("SubmissionPage", () => {
 
   it("renders the clean form initially", () => {
     render(<SubmissionPage />);
-    expect(screen.getByText("CHANGE REHEARSAL")).toBeDefined();
+    expect(screen.getAllByText("CHANGE REHEARSAL").length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/What were you trying to change?/i)).toBeDefined();
     expect(screen.getByLabelText(/Repository/i)).toBeDefined();
     expect(screen.getByLabelText(/Change Source/i)).toBeDefined();
